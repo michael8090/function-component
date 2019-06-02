@@ -1,0 +1,9 @@
+{
+  "name": "function-component",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/michael8090/function-component",
+  "author": "<michael8090@gmail.com>",
+  "license": "MIT",
+  "private": true
+}
