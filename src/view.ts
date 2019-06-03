@@ -39,15 +39,11 @@ interface StackNode {
     view?: View;
 }
 
-interface StackRecord {
-    [id: string]: StackNode | undefined;
-}
-
-class IdGenerator {
+class IndexManager {
     stackLength = 0;
-    indexInLayer = {};
+    private indexInLayer = {};
 
-    getId() {
+    getIndexInLayer() {
         const { stackLength, indexInLayer: iIL } = this;
         let indexInLayer: number = iIL[stackLength];
         if (indexInLayer === undefined) {
@@ -56,10 +52,7 @@ class IdGenerator {
             indexInLayer++;
         }
         iIL[stackLength] = indexInLayer;
-        //   return indexInLayer + ':' + stackLength
-        // at most 1024 layers deep
-        //   tslint:disable-next-line:no-bitwise
-        return (indexInLayer << 10) + stackLength;
+        return indexInLayer;
     }
     reset() {
         this.indexInLayer = {};
@@ -67,17 +60,87 @@ class IdGenerator {
     }
 }
 
-const idGenerator = new IdGenerator();
+interface ListNode<T> {
+    n?: ListNode<T>;
+    p?: ListNode<T>;
+}
+
+class Record<T extends Object> {
+    private map: {
+        [x : string]: {
+            [y: string]: T | undefined;
+        } | undefined;
+    } = {};
+    private head: ListNode<T> | undefined;
+    private tail: ListNode<T> | undefined;
+    put(x: number, y: number, v: T) {
+        const value = v as T & ListNode<T>;
+        let row = this.map[x];
+        if (!row) {
+            row = {};
+            this.map[x] = row;
+        }
+        if (!row[y]) {
+            row[y] = value;
+            if (!this.head) {
+                value.n = undefined;
+                value.p = undefined;
+                this.head = this.tail = value;
+            } else {
+                value.p = this.tail;
+                this.tail!.n = value;
+                this.tail = value;
+            }
+        }
+    }
+    get(x: number, y: number): T | undefined {
+        const row = this.map[x];
+        return row && row[y];
+    }
+    delete(x: number, y: number) {
+        const row = this.map[x];
+        if (row) {
+            const value = row[y] as (T & ListNode<T>) | undefined;
+            if (value) {
+                const node = value;
+                const p = node.p;
+                const next = node.n;
+                if (this.head === node) {
+                    this.head = node.n;
+                }
+                if (this.tail === node) {
+                    this.tail = node.p;
+                }
+                if (p) {
+                    p.n = next;
+                }
+                if (next) {
+                    next.p = p;
+                }
+                row[y] = undefined;
+            }
+        }
+    }
+    forEachValue(cb: (value: T) => void) {
+        let head: ListNode<T> | undefined = this.head;
+        while(head) {
+            cb(head as T);
+            head = head.n;
+        }
+    }
+}
+
+const indexManager = new IndexManager();
 
 let parentView: View | undefined;
-let currentStackRecord: StackRecord | undefined;
-let lastStackRecord: StackRecord | undefined;
+let currentStackRecord: Record<StackNode> | undefined;
+let lastStackRecord: Record<StackNode> | undefined;
 export function toFunctionComponent<T extends Function>(fn: {
     (onCreate: Handler, onUpdate: Handler, onDispose: Handler): T;
 }): T;
 export function toFunctionComponent<T>(vg: ViewGenerator<T>): (data: T) => void;
 export function toFunctionComponent<T>(input: any) {
-    if (typeof input === 'function') {
+    if (typeof input === "function") {
         return markAsFunctionComponent(input);
     }
     const vg = input as ViewGenerator<T>;
@@ -88,12 +151,14 @@ export function toFunctionComponent<T>(input: any) {
             );
         }
         const currentFn = f as IFunctionComponent<T>;
-        idGenerator.stackLength++;
-        const id = idGenerator.getId();
+        indexManager.stackLength++;
+        const stackLength = indexManager.stackLength;
+        const indexInLayer = indexManager.getIndexInLayer();
+        // const id = idGenerator.getId();
         // = (currentStackRecord[id] = {
         //     fn: currentFn
         // });
-        const lastNode = lastStackRecord[id];
+        const lastNode = lastStackRecord.get(stackLength, indexInLayer);
         const lastFn = lastNode && lastNode.fn;
 
         let currentNode: StackNode;
@@ -110,7 +175,7 @@ export function toFunctionComponent<T>(input: any) {
             if (vg.update) {
                 view = vg.update(data, lastNode!.view);
             }
-            lastStackRecord[id] = undefined;
+            lastStackRecord.delete(stackLength, indexInLayer);
         } else if (!lastFn) {
             // create
             currentNode = {
@@ -121,7 +186,7 @@ export function toFunctionComponent<T>(input: any) {
                 needsAppend = true;
             }
         } else {
-            // dipose last view and create current view
+            // dispose last view and create current view
             if (lastFn.vg.dispose) {
                 lastFn.vg.dispose(lastNode!.view);
             }
@@ -131,10 +196,10 @@ export function toFunctionComponent<T>(input: any) {
                 needsAppend = true;
             }
 
-            lastStackRecord[id] = undefined;
+            lastStackRecord.delete(stackLength, indexInLayer);
         }
 
-        currentStackRecord[id] = currentNode!;
+        currentStackRecord.put(stackLength, indexInLayer, currentNode!);
         currentNode!.view = view;
         currentNode!.fn = currentFn;
 
@@ -152,7 +217,7 @@ export function toFunctionComponent<T>(input: any) {
 
         parentView = parentBackup;
 
-        idGenerator.stackLength--;
+        indexManager.stackLength--;
     }
     f.vg = vg;
     return f;
@@ -198,12 +263,12 @@ function markAsFunctionComponent<T extends Function>(fn: {
 }
 
 export function getRoot() {
-    let cachedLastStackRecord: StackRecord = {};
-    let cachedCurrentStackRecord: StackRecord = {};
+    let cachedLastStackRecord: Record<StackNode> = new Record();
+    let cachedCurrentStackRecord: Record<StackNode> = new Record();
     const rootView = new View();
 
     return function Root() {
-        idGenerator.reset();
+        indexManager.reset();
         lastStackRecord = cachedLastStackRecord;
         currentStackRecord = cachedCurrentStackRecord;
         parentView = rootView;
@@ -212,14 +277,19 @@ export function getRoot() {
         }
         cachedLastStackRecord = currentStackRecord;
         // tslint:disable-next-line:forin
-        for (const key in lastStackRecord) {
-            const lastNode = lastStackRecord[key];
-            if (lastNode && lastNode.fn.vg.dispose) {
+        // for (const key in lastStackRecord) {
+        //     const lastNode = lastStackRecord[key];
+        //     if (lastNode && lastNode.fn.vg.dispose) {
+        //         lastNode.fn.vg.dispose(lastNode.view);
+        //     }
+        // }
+        lastStackRecord.forEachValue(lastNode => {
+            if (lastNode.fn.vg.dispose) {
                 lastNode.fn.vg.dispose(lastNode.view);
             }
-        }
+        })
 
-        lastStackRecord = {};
+        lastStackRecord = new Record();
         cachedCurrentStackRecord = lastStackRecord;
         lastStackRecord = undefined;
         currentStackRecord = undefined;
