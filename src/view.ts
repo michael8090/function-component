@@ -154,10 +154,7 @@ export function toFunctionComponent<T>(input: any) {
         indexManager.stackLength++;
         const stackLength = indexManager.stackLength;
         const indexInLayer = indexManager.getIndexInLayer();
-        // const id = idGenerator.getId();
-        // = (currentStackRecord[id] = {
-        //     fn: currentFn
-        // });
+
         const lastNode = lastStackRecord.get(stackLength, indexInLayer);
         const lastFn = lastNode && lastNode.fn;
 
@@ -276,13 +273,7 @@ export function getRoot() {
             arguments[i]();
         }
         cachedLastStackRecord = currentStackRecord;
-        // tslint:disable-next-line:forin
-        // for (const key in lastStackRecord) {
-        //     const lastNode = lastStackRecord[key];
-        //     if (lastNode && lastNode.fn.vg.dispose) {
-        //         lastNode.fn.vg.dispose(lastNode.view);
-        //     }
-        // }
+
         lastStackRecord.forEachValue(lastNode => {
             if (lastNode.fn.vg.dispose) {
                 lastNode.fn.vg.dispose(lastNode.view);
