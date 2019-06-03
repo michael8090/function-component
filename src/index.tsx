@@ -174,15 +174,43 @@ function animate() {
         // }
         // MeshGroup(F1);
 
-        // slow, 9fps, with a huge GC down to 1fps
-        // MeshGroup(() => {
-        //   MeshGroup(() => {
-        //     Box(boxesData.data[i]);
-        //   });
-        // });
+        // it's slower, but faster than react
+        Group(() => {
+          Group(() => {
+            Group(() => {
+              Group(() => {
+                Group(() => {
+                  Group(() => {
+                    Group(() => {
+                      Group(() => {
+                        Group(() => {
+                          Group(() => {
+                            Group(() => {
+                              Group(() => {
+                                Group(() => {
+                                  Group(() => {
+                                    Group(() => {
+                                      Group(() => {
+                                        Box(boxesData.data[i]);
+                                      });
+                                    });
+                                  });
+                                });
+                              });
+                            });
+                          });
+                        });
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
 
         // fastest, 10000 boxes at stable 17fps
-        Box(boxesData.data[i]);
+        // Box(boxesData.data[i]);
       }
       // boxesData.data.forEach(Box);
     });

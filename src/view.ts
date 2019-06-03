@@ -74,11 +74,12 @@ class Record<T extends Object> {
     private head: ListNode<T> | undefined;
     private tail: ListNode<T> | undefined;
     put(x: number, y: number, v: T) {
+        const {map} = this;
         const value = v as T & ListNode<T>;
-        let row = this.map[x];
+        let row = map[x];
         if (!row) {
             row = {};
-            this.map[x] = row;
+            map[x] = row;
         }
         if (!row[y]) {
             row[y] = value;
@@ -241,7 +242,7 @@ function markAsFunctionComponent<T extends Function>(fn: {
     );
     const Generator: ViewGenerator<any> = {
         render(data) {
-            Component.apply(null, data);
+            Component(data);
         }
     };
     if (onCreate) {
