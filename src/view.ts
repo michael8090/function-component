@@ -195,6 +195,8 @@ export function toFunctionComponent<T>(input: any) {
         if (lastFn! === currentFn) {
             if (vg.update !== undefined) {
                 view = vg.update(data, lastNode!.view);
+            } else {
+                view = lastNode!.view;
             }
         } else if (lastFn! === undefined) {
             // create

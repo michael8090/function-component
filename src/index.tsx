@@ -49,9 +49,9 @@ const MeshGroupFunctionComponent = toFunctionComponent<Function | undefined>({
   create() {
     return new MeshView(new THREE.Object3D());
   },
-  update(data, view) {
-    return view;
-  },
+  // update(data, view) {
+  //   return view;
+  // },
   dispose(view) {
     if (view) {
       view.dispose();
