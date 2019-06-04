@@ -37,7 +37,6 @@ interface IFunctionComponent<T = {}> {
 interface StackNode {
     fn: IFunctionComponent;
     view?: View;
-    gid: number;
     x: number;
     y: number;
 }
@@ -89,15 +88,14 @@ class List<T> {
             this.tail = value;
         }
     }
-    delete(value: ListNode<T>) {
-        const node = value;
+    delete(node: ListNode<T>) {
         const p = node.p;
         const next = node.n;
         if (this.head === node) {
-            this.head = node.n;
+            this.head = next;
         }
         if (this.tail === node) {
-            this.tail = node.p;
+            this.tail = p;
         }
         if (p !== undefined) {
             p.n = next;
@@ -153,7 +151,6 @@ class Record<T extends Object> {
 
 const indexManager = new IndexManager();
 
-let generation = 0;
 let parentView: View | undefined;
 let lastStackRecord: Record<StackNode> | undefined;
 let lastList: List<StackNode> | undefined;
@@ -187,9 +184,8 @@ export function toFunctionComponent<T>(input: any) {
         if (lastNode !== undefined) {
             lastFn = lastNode.fn;
 
-            lastList!.delete(lastNode!);
+            lastList!.delete(lastNode);
             currentNode = lastNode;
-            currentNode.gid = generation;
             currentNode.fn = currentFn;
         }
 
@@ -204,11 +200,10 @@ export function toFunctionComponent<T>(input: any) {
             // create
             currentNode = {
                 fn: currentFn,
-                gid: generation,
-                x: indexInLayer,
-                y: stackLength,
+                x: stackLength,
+                y: indexInLayer,
             };
-            lastStackRecord.put(stackLength, indexInLayer, currentNode!);
+            lastStackRecord.put(stackLength, indexInLayer, currentNode);
 
             if (vg.create !== undefined) {
                 view = vg.create(data);
@@ -290,12 +285,10 @@ function markAsFunctionComponent<T extends Function>(fn: {
 }
 
 function disposeLeftViews(lastNode: StackNode) {
-    if (lastNode.gid !== generation) {
-        if (lastNode.fn.vg.dispose !== undefined) {
-            lastNode.fn.vg.dispose(lastNode.view);
-            lastStackRecord!.delete(lastNode.x, lastNode.y);
-            lastList!.delete(lastNode);
-        }
+    if (lastNode.fn.vg.dispose !== undefined) {
+        lastNode.fn.vg.dispose(lastNode.view);
+        lastStackRecord!.delete(lastNode.x, lastNode.y);
+        lastList!.delete(lastNode);
     }
 }
 export function getRoot() {
@@ -311,7 +304,6 @@ export function getRoot() {
         lastList = cachedLastList;
         currentList = cachedCurrentList;
         parentView = rootView;
-        generation ++;
         
         child();
 
