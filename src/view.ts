@@ -37,6 +37,9 @@ interface IFunctionComponent<T = {}> {
 interface StackNode {
     fn: IFunctionComponent;
     view?: View;
+    gid: number;
+    x: number;
+    y: number;
 }
 
 class IndexManager {
@@ -78,7 +81,7 @@ class Record<T extends Object> {
         this.head = undefined;
         this.tail = undefined;
     }
-    put(x: string, y: string, v: T) {
+    put(x: number, y: number, v: T) {
         const {map} = this;
         const value = v as T & ListNode<T>;
         let row = map[x];
@@ -86,7 +89,6 @@ class Record<T extends Object> {
             row = {};
             map[x] = row;
         }
-        // if (!row[y]) {
         row[y] = value;
         if (this.head === undefined) {
             value.n = undefined;
@@ -97,16 +99,15 @@ class Record<T extends Object> {
             this.tail!.n = value;
             this.tail = value;
         }
-        // }
     }
-    get(x: string, y: string): T | undefined {
+    get(x: number, y: number): T | undefined {
         const row = this.map[x];
         if (row !== undefined) {
             return row[y];
         }
         return undefined;
     }
-    delete(x: string, y: string) {
+    delete(x: number, y: number) {
         const row = this.map[x];
         if (row !== undefined) {
             const value = row[y] as (T & ListNode<T>) | undefined;
@@ -141,8 +142,9 @@ class Record<T extends Object> {
 
 const indexManager = new IndexManager();
 
+let generation = 0;
 let parentView: View | undefined;
-let currentStackRecord: Record<StackNode> | undefined;
+// let currentStackRecord: Record<StackNode> | undefined;
 let lastStackRecord: Record<StackNode> | undefined;
 export function toFunctionComponent<T extends Function>(fn: {
     (onCreate: Handler, onUpdate: Handler, onDispose: Handler): T;
@@ -154,7 +156,7 @@ export function toFunctionComponent<T>(input: any) {
     }
     const vg = input as ViewGenerator<T>;
     function f(data: T) {
-        if (currentStackRecord === undefined || lastStackRecord === undefined) {
+        if (lastStackRecord === undefined) {
             throw new Error(
                 `A function component should be wrapped inside a Root (use getRoot())`
             );
@@ -162,19 +164,20 @@ export function toFunctionComponent<T>(input: any) {
         const currentFn = f as IFunctionComponent<T>;
         indexManager.stackLength++;
         const stackLength = indexManager.stackLength;
-        const indexInLayer = indexManager.getIndexInLayer() as any as string;
+        const indexInLayer = indexManager.getIndexInLayer()
 
-        const stackLengthString = stackLength as any as string;
-
-        const lastNode = lastStackRecord.get(stackLengthString, indexInLayer);
+        const lastNode = lastStackRecord.get(stackLength, indexInLayer);
 
         let currentNode: StackNode;
         let lastFn: IFunctionComponent;
 
         // for less GC
         if (lastNode !== undefined) {
-            currentNode = lastNode;
             lastFn = lastNode.fn;
+
+            currentNode = lastNode;
+            currentNode.gid = generation;
+            currentNode.fn = currentFn;
         }
 
         let view: NullableView;
@@ -184,12 +187,16 @@ export function toFunctionComponent<T>(input: any) {
             if (vg.update !== undefined) {
                 view = vg.update(data, lastNode!.view);
             }
-            lastStackRecord.delete(stackLengthString, indexInLayer);
         } else if (lastFn! === undefined) {
             // create
             currentNode = {
-                fn: currentFn
+                fn: currentFn,
+                gid: generation,
+                x: indexInLayer,
+                y: stackLength,
             };
+            lastStackRecord.put(stackLength, indexInLayer, currentNode!);
+
             if (vg.create !== undefined) {
                 view = vg.create(data);
                 needsAppend = true;
@@ -204,13 +211,9 @@ export function toFunctionComponent<T>(input: any) {
                 view = vg.create(data);
                 needsAppend = true;
             }
-
-            lastStackRecord.delete(stackLengthString, indexInLayer);
         }
 
-        currentStackRecord.put(stackLengthString, indexInLayer, currentNode!);
         currentNode!.view = view;
-        currentNode!.fn = currentFn;
 
         const parentBackup = parentView;
         if (view !== undefined) {
@@ -272,31 +275,27 @@ function markAsFunctionComponent<T extends Function>(fn: {
 }
 
 function disposeLeftViews(lastNode: StackNode) {
-    if (lastNode.fn.vg.dispose !== undefined) {
-        lastNode.fn.vg.dispose(lastNode.view);
-    }
+    // if (lastNode.gid !== generation) {
+    //     if (lastNode.fn.vg.dispose !== undefined) {
+    //         lastNode.fn.vg.dispose(lastNode.view);
+    //         lastStackRecord!.delete(lastNode.x, lastNode.y);
+    //     }
+    // }
 }
 export function getRoot() {
-    let cachedLastStackRecord: Record<StackNode> = new Record();
-    let cachedCurrentStackRecord: Record<StackNode> = new Record();
+    const cachedLastStackRecord: Record<StackNode> = new Record();
     const rootView = new View();
 
-    return function Root() {
+    return function Root(child: Function) {
         indexManager.reset();
         lastStackRecord = cachedLastStackRecord;
-        currentStackRecord = cachedCurrentStackRecord;
         parentView = rootView;
-        for (let i = 0, l = arguments.length; i < l; i++) {
-            arguments[i]();
-        }
-        cachedLastStackRecord = currentStackRecord;
+        generation ++;
+        
+        child();
 
         lastStackRecord.forEachValue(disposeLeftViews);
 
-        lastStackRecord.reset();
-        cachedCurrentStackRecord = lastStackRecord;
-        lastStackRecord = undefined;
-        currentStackRecord = undefined;
         return rootView;
     } as { (...args: any[]): View };
 }
