@@ -275,12 +275,12 @@ function markAsFunctionComponent<T extends Function>(fn: {
 }
 
 function disposeLeftViews(lastNode: StackNode) {
-    // if (lastNode.gid !== generation) {
-    //     if (lastNode.fn.vg.dispose !== undefined) {
-    //         lastNode.fn.vg.dispose(lastNode.view);
-    //         lastStackRecord!.delete(lastNode.x, lastNode.y);
-    //     }
-    // }
+    if (lastNode.gid !== generation) {
+        if (lastNode.fn.vg.dispose !== undefined) {
+            lastNode.fn.vg.dispose(lastNode.view);
+            lastStackRecord!.delete(lastNode.x, lastNode.y);
+        }
+    }
 }
 export function getRoot() {
     const cachedLastStackRecord: Record<StackNode> = new Record();
