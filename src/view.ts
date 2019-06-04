@@ -16,9 +16,11 @@ export class View {
      * do the cleaning work here
      */
     dispose() {
-        this.children.forEach(c => c.dispose());
+        this.children.forEach((c, i) => {
+            c.dispose();
+            this.remove(i);
+        });
         this.children = [];
-        this.parent = undefined;
     }
 }
 
@@ -105,13 +107,18 @@ class List<T> {
         if (next !== undefined) {
             next.p = p;
         }
+        node.p = undefined;
+        node.n = undefined;
     }
 
     forEachValue(cb: (value: T) => void) {
         let head: ListNode<T> | undefined = this.head;
         while(head !== undefined) {
+            const next = head.n;
+            // cb may delete `head.n`
+            // we take head as immutable when iterating
             cb(head as T);
-            head = head.n;
+            head = next;
         }
     }
 }
