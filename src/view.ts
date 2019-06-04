@@ -63,33 +63,22 @@ class IndexManager {
     }
 }
 
-interface ListNode<T> {
+type ListNode<T> = T & {
     n?: ListNode<T>;
     p?: ListNode<T>;
 }
 
-class Record<T extends Object> {
-    private map: {
-        [x : string]: {
-            [y: string]: T | undefined;
-        } | undefined;
-    } = {};
+class List<T> {
     private head: ListNode<T> | undefined;
     private tail: ListNode<T> | undefined;
+
     reset() {
-        this.map = {};
         this.head = undefined;
         this.tail = undefined;
     }
-    put(x: number, y: number, v: T) {
-        const {map} = this;
+
+    add(v: T) {
         const value = v as T & ListNode<T>;
-        let row = map[x];
-        if (row === undefined) {
-            row = {};
-            map[x] = row;
-        }
-        row[y] = value;
         if (this.head === undefined) {
             value.n = undefined;
             value.p = undefined;
@@ -99,6 +88,53 @@ class Record<T extends Object> {
             this.tail!.n = value;
             this.tail = value;
         }
+    }
+    delete(value: ListNode<T>) {
+        const node = value;
+        const p = node.p;
+        const next = node.n;
+        if (this.head === node) {
+            this.head = node.n;
+        }
+        if (this.tail === node) {
+            this.tail = node.p;
+        }
+        if (p !== undefined) {
+            p.n = next;
+        }
+        if (next !== undefined) {
+            next.p = p;
+        }
+    }
+
+    forEachValue(cb: (value: T) => void) {
+        let head: ListNode<T> | undefined = this.head;
+        while(head !== undefined) {
+            cb(head as T);
+            head = head.n;
+        }
+    }
+}
+
+class Record<T extends Object> {
+    private map: {
+        [x : string]: {
+            [y: string]: T | undefined;
+        } | undefined;
+    } = {};
+
+    reset() {
+        this.map = {};
+    }
+    put(x: number, y: number, v: T) {
+        const {map} = this;
+        const value = v ;
+        let row = map[x];
+        if (row === undefined) {
+            row = {};
+            map[x] = row;
+        }
+        row[y] = value;
     }
     get(x: number, y: number): T | undefined {
         const row = this.map[x];
@@ -110,32 +146,7 @@ class Record<T extends Object> {
     delete(x: number, y: number) {
         const row = this.map[x];
         if (row !== undefined) {
-            const value = row[y] as (T & ListNode<T>) | undefined;
-            if (value !== undefined) {
-                const node = value;
-                const p = node.p;
-                const next = node.n;
-                if (this.head === node) {
-                    this.head = node.n;
-                }
-                if (this.tail === node) {
-                    this.tail = node.p;
-                }
-                if (p !== undefined) {
-                    p.n = next;
-                }
-                if (next !== undefined) {
-                    next.p = p;
-                }
-                row[y] = undefined;
-            }
-        }
-    }
-    forEachValue(cb: (value: T) => void) {
-        let head: ListNode<T> | undefined = this.head;
-        while(head !== undefined) {
-            cb(head as T);
-            head = head.n;
+            row[y] = undefined;
         }
     }
 }
@@ -144,8 +155,9 @@ const indexManager = new IndexManager();
 
 let generation = 0;
 let parentView: View | undefined;
-// let currentStackRecord: Record<StackNode> | undefined;
 let lastStackRecord: Record<StackNode> | undefined;
+let lastList: List<StackNode> | undefined;
+let currentList: List<StackNode> | undefined;
 export function toFunctionComponent<T extends Function>(fn: {
     (onCreate: Handler, onUpdate: Handler, onDispose: Handler): T;
 }): T;
@@ -175,6 +187,7 @@ export function toFunctionComponent<T>(input: any) {
         if (lastNode !== undefined) {
             lastFn = lastNode.fn;
 
+            lastList!.delete(lastNode!);
             currentNode = lastNode;
             currentNode.gid = generation;
             currentNode.fn = currentFn;
@@ -214,6 +227,8 @@ export function toFunctionComponent<T>(input: any) {
         }
 
         currentNode!.view = view;
+
+        currentList!.add(currentNode!);
 
         const parentBackup = parentView;
         if (view !== undefined) {
@@ -279,22 +294,34 @@ function disposeLeftViews(lastNode: StackNode) {
         if (lastNode.fn.vg.dispose !== undefined) {
             lastNode.fn.vg.dispose(lastNode.view);
             lastStackRecord!.delete(lastNode.x, lastNode.y);
+            lastList!.delete(lastNode);
         }
     }
 }
 export function getRoot() {
     const cachedLastStackRecord: Record<StackNode> = new Record();
     const rootView = new View();
+    let cachedLastList = new List<StackNode>();
+    let cachedCurrentList = new List<StackNode>();
 
     return function Root(child: Function) {
+        cachedCurrentList.reset();
         indexManager.reset();
         lastStackRecord = cachedLastStackRecord;
+        lastList = cachedLastList;
+        currentList = cachedCurrentList;
         parentView = rootView;
         generation ++;
         
         child();
 
-        lastStackRecord.forEachValue(disposeLeftViews);
+        lastList.forEachValue(disposeLeftViews);
+        
+        lastList.reset();
+        
+        // swap the two list
+        cachedCurrentList = lastList;
+        cachedLastList = currentList;
 
         return rootView;
     } as { (...args: any[]): View };

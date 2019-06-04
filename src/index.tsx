@@ -213,7 +213,7 @@ function animate() {
 
         // fastest, 10000 boxes at stable 17fps
         Box(boxesData.data[i]);
-        // noop();
+        // noop(boxesData.data[i]);
       }
       // boxesData.data.forEach(Box);
     });
