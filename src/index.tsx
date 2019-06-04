@@ -45,9 +45,7 @@ class MeshView extends View {
   }
 }
 
-const MeshGroupFunctionComponent = toFunctionComponent<{
-  children: ArrayLike<() => void>;
-}>({
+const MeshGroupFunctionComponent = toFunctionComponent<Function | undefined>({
   create() {
     return new MeshView(new THREE.Object3D());
   },
@@ -60,20 +58,20 @@ const MeshGroupFunctionComponent = toFunctionComponent<{
     }
   },
   render(data) {
-    for (let i = 0, l = data.children.length; i < l; i++) {
-      data.children[i]();
+    if (data) {
+      data();
     }
   }
 });
 
-const MeshGroup = function (...args: any[]) {
-  MeshGroupFunctionComponent({ children: arguments });
+const MeshGroup = function (child: Function | undefined) {
+  MeshGroupFunctionComponent(child);
 };
 
 const Group = toFunctionComponent(
   () =>
-    function (...args: Function[]) {
-      for (let i = 0, l = arguments.length; i < l; i++) { arguments[i](); }
+    function (child: Function) {
+      child();
     }
 );
 
@@ -123,7 +121,7 @@ const Box = toFunctionComponent<BoxData>({
 const Root = getRoot();
 
 const rootView = Root(() => {
-  MeshGroup();
+  MeshGroup(undefined);
 });
 
 const rootMesh = (rootView.children[0] as MeshView).mesh;
@@ -158,6 +156,10 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 camera.position.z = 5;
 
+function noop(a?: any) {
+  //
+}
+
 function animate() {
   if (needDraw) {
     boxesData.turn();
@@ -175,42 +177,43 @@ function animate() {
         // MeshGroup(F1);
 
         // it's slower, but faster than react
-        Group(() => {
-          Group(() => {
-            Group(() => {
-              Group(() => {
-                Group(() => {
-                  Group(() => {
-                    Group(() => {
-                      Group(() => {
-                        Group(() => {
-                          Group(() => {
-                            Group(() => {
-                              Group(() => {
-                                Group(() => {
-                                  Group(() => {
-                                    Group(() => {
-                                      Group(() => {
-                                        Box(boxesData.data[i]);
-                                      });
-                                    });
-                                  });
-                                });
-                              });
-                            });
-                          });
-                        });
-                      });
-                    });
-                  });
-                });
-              });
-            });
-          });
-        });
+        // Group(() => {
+        //   Group(() => {
+        //     Group(() => {
+        //       Group(() => {
+        //         Group(() => {
+        //           Group(() => {
+        //             Group(() => {
+        //               Group(() => {
+        //                 Group(() => {
+        //                   Group(() => {
+        //                     Group(() => {
+        //                       Group(() => {
+        //                         Group(() => {
+        //                           Group(() => {
+        //                             Group(() => {
+        //                               Group(() => {
+        //                                 Box(boxesData.data[i]);
+        //                               });
+        //                             });
+        //                           });
+        //                         });
+        //                       });
+        //                     });
+        //                   });
+        //                 });
+        //               });
+        //             });
+        //           });
+        //         });
+        //       });
+        //     });
+        //   });
+        // });
 
         // fastest, 10000 boxes at stable 17fps
-        // Box(boxesData.data[i]);
+        Box(boxesData.data[i]);
+        // noop();
       }
       // boxesData.data.forEach(Box);
     });
