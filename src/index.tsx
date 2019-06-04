@@ -30,24 +30,28 @@ class MeshView extends View {
     super();
   }
 
-  public append(child: MeshView) {
-    super.append(child);
+  add(child: MeshView) {
+    super.add(child);
     this.mesh.add(child.mesh);
   }
-  public removeChild(child: MeshView) {
-    super.removeChild(child);
+  remove(i: number) {
+    super.remove(i);
+    const child = this.children[i] as MeshView;
     this.mesh.remove(child.mesh);
   }
-  public dispose() {
+  dispose() {
     super.dispose();
-
     // todo: dispose materials
   }
 }
 
 const MeshGroupFunctionComponent = toFunctionComponent<Function | undefined>({
-  create() {
-    return new MeshView(new THREE.Object3D());
+  create(data, parent) {
+    const view = new MeshView(new THREE.Object3D());
+    if (parent) {
+      parent.add(view);
+    }
+    return view;
   },
   // update(data, view) {
   //   return view;
@@ -87,7 +91,7 @@ interface BoxData {
   rotation: THREE.Vector3;
 }
 const Box = toFunctionComponent<BoxData>({
-  create(data) {
+  create(data, parent) {
     const geometry = new THREE.BoxGeometry(2, 2, 2);
 
     const material = new THREE.MeshNormalMaterial();
@@ -96,8 +100,11 @@ const Box = toFunctionComponent<BoxData>({
     mesh.position.copy(data.position);
     mesh.rotation.set(data.rotation.x, data.rotation.y, data.rotation.z);
 
-    return new MeshView(mesh);
-    // return new MeshView(new THREE.Object3D());
+    const view = new MeshView(mesh);
+    if (parent) {
+      parent.add(view);
+    }
+    return view;
   },
   update(data, view) {
     if (needDraw) {
@@ -109,9 +116,18 @@ const Box = toFunctionComponent<BoxData>({
   },
   dispose(view) {
     if (view) {
-      const mesh = (view as MeshView).mesh;
+      // todo: too many "as" here
+      const mesh = (view as MeshView).mesh as THREE.Mesh;
       if (mesh.parent) {
         mesh.parent.remove(mesh);
+      }
+      mesh.geometry.dispose();
+      const {material} = mesh;
+      if (material instanceof THREE.Material) {
+        material.dispose();
+      } else {
+        // tslint:disable-next-line:no-console
+        console.warn('not supported multi materials');
       }
       view.dispose();
     }

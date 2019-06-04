@@ -1,29 +1,31 @@
 export class View {
     parent: View | undefined;
     children: View[] = [];
-    append(child: View) {
+    add(child: View) {
         child.parent = this;
         this.children.push(child);
     }
-    removeChild(child: View) {
-        const i = this.children.indexOf(child);
+    remove(i: number) {
         if (i !== -1) {
+            const child = this.children[i];
+            child.parent = undefined;
             this.children.splice(i, 1);
         }
     }
+    /**
+     * do the cleaning work here
+     */
     dispose() {
         this.children.forEach(c => c.dispose());
         this.children = [];
-        if (this.parent) {
-            this.parent.removeChild(this);
-        }
+        this.parent = undefined;
     }
 }
 
 type NullableView = View | undefined;
 
 export interface ViewGenerator<TData> {
-    create?(data: TData): NullableView;
+    create?(data: TData, parent: NullableView): NullableView;
     update?(data: TData, view: NullableView): NullableView;
     dispose?(view: NullableView): void;
     render?(data: TData): void;
@@ -190,7 +192,6 @@ export function toFunctionComponent<T>(input: any) {
         }
 
         let view: NullableView;
-        let needsAppend = false;
 
         if (lastFn! === currentFn) {
             if (vg.update !== undefined) {
@@ -208,8 +209,7 @@ export function toFunctionComponent<T>(input: any) {
             lastStackRecord.put(stackLength, indexInLayer, currentNode);
 
             if (vg.create !== undefined) {
-                view = vg.create(data);
-                needsAppend = true;
+                view = vg.create(data, parentView);
             }
         } else {
             // dispose last view and create current view
@@ -218,8 +218,7 @@ export function toFunctionComponent<T>(input: any) {
             }
 
             if (vg.create !== undefined) {
-                view = vg.create(data);
-                needsAppend = true;
+                view = vg.create(data, parentView);
             }
         }
 
@@ -229,9 +228,6 @@ export function toFunctionComponent<T>(input: any) {
 
         const parentBackup = parentView;
         if (view !== undefined) {
-            if (needsAppend === true && parentView !== undefined) {
-                parentView.append(view);
-            }
             parentView = view;
         }
 
