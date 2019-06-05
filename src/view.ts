@@ -66,25 +66,27 @@ class IndexManager {
     }
 }
 
-type ListNode<T> = T & {
-    n?: ListNode<T>;
-    p?: ListNode<T>;
+type LinkedListNode<T> = T & {
+    n?: LinkedListNode<T>;
+    p?: LinkedListNode<T>;
 }
 
-class List<T> {
-    private head: ListNode<T> | undefined;
-    private tail: ListNode<T> | undefined;
+class LinkedList<T> {
+    private head: LinkedListNode<T> | undefined;
+    private tail: LinkedListNode<T> | undefined;
 
     reset() {
         this.head = undefined;
         this.tail = undefined;
     }
 
+    /**
+     * assume that the node is not connected to any other linked list
+     * @param v 
+     */
     add(v: T) {
-        const value = v as T & ListNode<T>;
+        const value = v as T & LinkedListNode<T>;
         if (this.head === undefined) {
-            value.n = undefined;
-            value.p = undefined;
             this.head = this.tail = value;
         } else {
             value.p = this.tail;
@@ -92,7 +94,7 @@ class List<T> {
             this.tail = value;
         }
     }
-    delete(node: ListNode<T>) {
+    delete(node: LinkedListNode<T>) {
         const p = node.p;
         const next = node.n;
         if (this.head === node) {
@@ -112,7 +114,7 @@ class List<T> {
     }
 
     forEachValue(cb: (value: T) => void) {
-        let head: ListNode<T> | undefined = this.head;
+        let head: LinkedListNode<T> | undefined = this.head;
         while(head !== undefined) {
             const next = head.n;
             // cb may delete `head.n`
@@ -162,8 +164,8 @@ const indexManager = new IndexManager();
 
 let parentView: View | undefined;
 let lastStackRecord: Record<StackNode> | undefined;
-let lastList: List<StackNode> | undefined;
-let currentList: List<StackNode> | undefined;
+let lastList: LinkedList<StackNode> | undefined;
+let currentList: LinkedList<StackNode> | undefined;
 export function toFunctionComponent<T extends Function>(fn: {
     (onCreate: Handler, onUpdate: Handler, onDispose: Handler): T;
 }): T;
@@ -293,14 +295,14 @@ function disposeLeftViews(lastNode: StackNode) {
     if (lastNode.fn.vg.dispose !== undefined) {
         lastNode.fn.vg.dispose(lastNode.view);
         lastStackRecord!.delete(lastNode.x, lastNode.y);
-        lastList!.delete(lastNode);
+        // lastList!.delete(lastNode);
     }
 }
 export function getRoot() {
     const cachedLastStackRecord: Record<StackNode> = new Record();
     const rootView = new View();
-    let cachedLastList = new List<StackNode>();
-    let cachedCurrentList = new List<StackNode>();
+    let cachedLastList = new LinkedList<StackNode>();
+    let cachedCurrentList = new LinkedList<StackNode>();
 
     return function Root(child: Function) {
         cachedCurrentList.reset();
