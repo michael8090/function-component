@@ -1,3 +1,5 @@
+import { CrossList, CrossListNode } from './CrossLinkedList';
+
 export interface ViewGenerator<TData = {}, TView = {}> {
     create?(data: TData, parent: TView): TView | undefined;
     update?(data: TData, view: TView): TView | undefined;
@@ -10,11 +12,32 @@ interface IFunctionComponent<TData = {}, TView = {}> {
     vg: ViewGenerator<TData, TView>;
 }
 
-interface StackNode {
+interface StackNode extends CrossListNode {
     fn: IFunctionComponent;
+    isUpdated?: boolean;
     view?: any;
-    x: number;
-    y: number;
+}
+
+class MemoryPool {
+    private pool: any[] = [];
+    constructor(private create: () => any) {}
+    put(item: any) {
+        // if (this.pool.includes(item)) {
+        //     // tslint:disable-next-line:no-debugger
+        //     debugger;
+        // }
+        this.pool.push(item);
+    } 
+    get() {
+        const item = this.pool.pop();
+        if (item === undefined) {
+            return this.create();
+        }
+        return item;
+    }
+    clear() {
+        this.pool = [];
+    }
 }
 
 class IndexManager {
@@ -132,12 +155,40 @@ class Record<T extends Object> {
     }
 }
 
-const indexManager = new IndexManager();
+function disposeNode(lastNode: StackNode) {
+    if (lastNode.isUpdated === undefined) {
+        if (lastNode.fn.vg.dispose !== undefined) {
+            lastNode.fn.vg.dispose(lastNode.view);
+        }
+    }
+    lastNode.child = undefined;
+    lastNode.nextSibling = undefined;
+    lastNode.isUpdated = false;
+    lastNode.view = undefined;
+    memoryPool.put(lastNode);
+}
+
+
+// const indexManager = new IndexManager();
 
 let parentView: any | undefined;
-let lastStackRecord: Record<StackNode> | undefined;
-let lastList: LinkedList<StackNode> | undefined;
-let currentList: LinkedList<StackNode> | undefined;
+
+let lastCallStack: StackNode | undefined;
+let currentCallStack: StackNode | undefined;
+
+let parentInLastCallStack: StackNode | undefined;
+let parentInCurrentCallStack: StackNode | undefined;
+
+let preSiblingInLastCallStack: StackNode | undefined;
+let preSiblingInCurrentCallStack: StackNode | undefined;
+
+let lastVisitedSiblingInLastCallStack: StackNode | undefined;
+// let lastVisitedSiblingInCurrentCallStack: StackNode | undefined;
+
+let memoryPool: MemoryPool;
+
+let isInRoot = false;
+
 export function toFunctionComponent<T extends Function>(fn: {
     (onCreate: Handler, onUpdate: Handler, onDispose: Handler): T;
 }): T;
@@ -148,29 +199,44 @@ export function toFunctionComponent<TData, TView>(input: any) {
     }
     const vg = input as ViewGenerator<TData, TView>;
     function f(data: TData) {
-        if (lastStackRecord === undefined) {
+        if (isInRoot === undefined) {
             throw new Error(
                 `A function component should be wrapped inside a Root (use getRoot())`
             );
         }
         const currentFn = f as IFunctionComponent<TData, TView>;
-        indexManager.stackLength++;
-        const stackLength = indexManager.stackLength;
-        const indexInLayer = indexManager.getIndexInLayer()
+        // indexManager.stackLength++;
+        // const stackLength = indexManager.stackLength;
+        // const indexInLayer = indexManager.getIndexInLayer()
 
-        const lastNode = lastStackRecord.get(stackLength, indexInLayer);
+        let lastNode: StackNode | undefined;
+        if (currentCallStack === undefined) {
+            lastNode = lastCallStack;
+        } else if (lastVisitedSiblingInLastCallStack === undefined) {
+            if (parentInLastCallStack !== undefined) {
+                lastNode = parentInLastCallStack.child;
+            }
+        } else {
+            lastNode = lastVisitedSiblingInLastCallStack.nextSibling;
+        }
+        if (lastNode) {
+            lastVisitedSiblingInLastCallStack = lastNode;
+        }
 
         let currentNode: StackNode;
         let lastFn: IFunctionComponent;
 
-        // for less GC
         if (lastNode !== undefined) {
             lastFn = lastNode.fn;
 
-            lastList!.delete(lastNode);
-            currentNode = lastNode;
-            currentNode.fn = currentFn;
+            // for less GC
+            // lastList!.delete(lastNode);
+            // currentNode = lastNode;
+            // currentNode.fn = currentFn;
         }
+
+        currentNode = memoryPool.get();
+        currentNode.fn = currentFn;
 
         let view: any;
 
@@ -180,14 +246,14 @@ export function toFunctionComponent<TData, TView>(input: any) {
             } else {
                 view = lastNode!.view;
             }
+            lastNode!.isUpdated = true;
         } else if (lastFn! === undefined) {
             // create
-            currentNode = {
-                fn: currentFn,
-                x: stackLength,
-                y: indexInLayer,
-            };
-            lastStackRecord.put(stackLength, indexInLayer, currentNode);
+            // currentNode = {
+            //     fn: currentFn
+            // };
+            // lastStackRecord.put(stackLength, indexInLayer, currentNode);
+
 
             if (vg.create !== undefined) {
                 view = vg.create(data, parentView);
@@ -195,8 +261,11 @@ export function toFunctionComponent<TData, TView>(input: any) {
         } else {
             // dispose last view and create current view
             if (lastFn!.vg.dispose !== undefined) {
-                lastFn!.vg.dispose(lastNode!.view);
-                // todo: remove all the nodes beneath it 
+                // lastFn!.vg.dispose(lastNode!.view);
+                if (parentInLastCallStack) {
+                    CrossList.remove(lastNode!, parentInLastCallStack, preSiblingInLastCallStack);
+                }
+                CrossList.walk(lastNode!, disposeNode);
             }
 
             if (vg.create !== undefined) {
@@ -206,9 +275,35 @@ export function toFunctionComponent<TData, TView>(input: any) {
 
         currentNode!.view = view;
 
-        currentList!.add(currentNode!);
+        // currentList!.add(currentNode!);
+        if (currentCallStack === undefined) {
+            currentCallStack = currentNode;
+        } else {
+            CrossList.add(currentNode, parentInCurrentCallStack!, preSiblingInCurrentCallStack);
+        }
 
-        const parentBackup = parentView;
+        preSiblingInCurrentCallStack = currentNode;
+
+        // done with the node, now for the children
+
+        const parentViewBackup = parentView;
+
+        const parentInLastCallStackBackup = parentInLastCallStack;
+        const preSiblingInLastCallStackBackup = preSiblingInLastCallStack;
+        const lastVisitedSiblingInLastCallStackBackup = lastVisitedSiblingInLastCallStack;
+
+        const parentInCurrentCallStackBackup = parentInCurrentCallStack;
+        const preSiblingInCurrentCallStackBackup = preSiblingInCurrentCallStack;
+        // const lastVisitedSiblingInCurrentCallStackBackup = lastVisitedSiblingInCurrentCallStack;
+
+        parentInLastCallStack = lastNode;
+        preSiblingInLastCallStack = undefined;
+        lastVisitedSiblingInLastCallStack = undefined;
+
+        parentInCurrentCallStack = currentNode;
+        preSiblingInCurrentCallStack = undefined;
+        // lastVisitedSiblingInCurrentCallStack = undefined;
+
         if (view !== undefined) {
             parentView = view;
         }
@@ -217,9 +312,17 @@ export function toFunctionComponent<TData, TView>(input: any) {
             currentFn.vg.render(data);
         }
 
-        parentView = parentBackup;
+        parentView = parentViewBackup;
 
-        indexManager.stackLength--;
+        parentInLastCallStack = parentInLastCallStackBackup;
+        preSiblingInLastCallStack = preSiblingInLastCallStackBackup;
+        lastVisitedSiblingInLastCallStack = lastVisitedSiblingInLastCallStackBackup;
+
+        parentInCurrentCallStack = parentInCurrentCallStackBackup;
+        preSiblingInCurrentCallStack = preSiblingInCurrentCallStackBackup;
+        // lastVisitedSiblingInCurrentCallStack = lastVisitedSiblingInCurrentCallStackBackup;
+
+        // indexManager.stackLength--;
     }
     f.vg = vg;
     return f;
@@ -264,34 +367,54 @@ function markAsFunctionComponent<T extends Function>(fn: {
     } as any) as T;
 }
 
-function disposeLeftViews(lastNode: StackNode) {
-    if (lastNode.fn.vg.dispose !== undefined) {
-        lastNode.fn.vg.dispose(lastNode.view);
-        lastStackRecord!.delete(lastNode.x, lastNode.y);
-        // lastList!.delete(lastNode);
-    }
+function createStackNode() {
+    return ({
+        //
+    });
 }
+
 export function getRoot<T>(rootView: T) {
-    const cachedLastStackRecord: Record<StackNode> = new Record();
-    let cachedLastList = new LinkedList<StackNode>();
-    let cachedCurrentList = new LinkedList<StackNode>();
+    let cachedLastStack: StackNode | undefined;
+    let cachedCurrentStack: StackNode | undefined;
+    const cachedMemoryPool = new MemoryPool(createStackNode);
 
     return function Root(child: Function) {
-        cachedCurrentList.reset();
-        indexManager.reset();
-        lastStackRecord = cachedLastStackRecord;
-        lastList = cachedLastList;
-        currentList = cachedCurrentList;
-        parentView = rootView;
-        
-        child();
+        // cachedCurrentList.reset();
+        // indexManager.reset();
+        // lastStackRecord = cachedLastStackRecord;
+        // lastList = cachedLastList;
+        // currentList = cachedCurrentList;
 
-        lastList.forEachValue(disposeLeftViews);
+        lastCallStack = cachedLastStack;
+        parentInLastCallStack = undefined;
+        preSiblingInLastCallStack = undefined;
+        lastVisitedSiblingInLastCallStack = undefined;
+
+        currentCallStack = cachedCurrentStack;
+        parentInCurrentCallStack = undefined;
+        preSiblingInCurrentCallStack = undefined;
+        // lastVisitedSiblingInCurrentCallStack = undefined
+
+        parentView = rootView;
+
+        memoryPool = cachedMemoryPool;
         
-        lastList.reset();
-        
+        isInRoot = true;
+        child();
+        isInRoot = false;
+
+        if (lastCallStack) {
+            CrossList.walk(lastCallStack, disposeNode);
+        }
+                
+        // lastList.reset();
+
+        lastCallStack = undefined;
+
         // swap the two list
-        cachedCurrentList = lastList;
-        cachedLastList = currentList;
+        cachedCurrentStack = lastCallStack;
+        cachedLastStack = currentCallStack;
+
+        parentView = undefined;
     };
 }

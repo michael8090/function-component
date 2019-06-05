@@ -1,11 +1,12 @@
-interface ListNode {
-    child?: ListNode;
-    nextSibling?: ListNode;
+interface CrossListNode {
+    child?: this;
+    nextSibling?: this;
 }
 
 
+const queue: CrossListNode[] = [];
 const CrossList = {
-    remove(node: ListNode, parent: ListNode, preSibling?: ListNode) {
+    remove(node: CrossListNode, parent: CrossListNode, preSibling?: CrossListNode) {
         if (preSibling === undefined) {
             parent.child = node.nextSibling;
         } else {
@@ -13,7 +14,7 @@ const CrossList = {
         }
     },
 
-    add(node: ListNode, parent: ListNode, preSibling?: ListNode) {
+    add(node: CrossListNode, parent: CrossListNode, preSibling?: CrossListNode) {
         if (preSibling === undefined) {
             parent.child = node;
         } else {
@@ -22,28 +23,25 @@ const CrossList = {
         }
     },
     /**
-     * walk inside the root, fn is called against every child of root, but not root itself
+     * walk inside the root, fn is called against root itself and every child of root
      * @param root 
      * @param fn 
      */
-    walk(root: ListNode, fn: (node: ListNode, parent: ListNode, preSibling?: ListNode) => void) {
-        let parent = root;
-        let preSibling: ListNode | undefined;
-        let node = root.child;
-        while (node) {
-            // fn may change the node, backup first to ensure the visiting is stable
-            const {nextSibling, child} = node;
-            fn(node, parent, preSibling);
-            if (nextSibling !== undefined) {
-                preSibling = node;
+    walk(root: CrossListNode, fn: (node: CrossListNode) => void) {
+        // todo: if the perf is not good, we can try LinkedList
+        queue.push(root);
+        while(queue.length) {
+            let node = queue.shift();
+            while(node) {
+                const {nextSibling, child} = node;
+                fn(node);
+                if (child) {
+                    queue.push(child);
+                }
                 node = nextSibling;
-            } else {
-                preSibling = undefined;
-                parent = node;
-                node = child;
             }
         }
     }
 }
 
-export {ListNode, CrossList};
+export {CrossListNode, CrossList};

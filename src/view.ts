@@ -16,10 +16,12 @@ export class View {
      * do the cleaning work here
      */
     dispose() {
-        this.children.forEach((c, i) => {
+        for (let l = this.children.length - 1, i = l; i > 0; i--) {
+            const c = this.children[i];
             c.dispose();
             this.remove(i);
-        });
+        }
+
         this.children = [];
     }
 }
