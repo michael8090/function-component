@@ -196,6 +196,7 @@ export function toFunctionComponent<TData, TView>(input: any) {
             // dispose last view and create current view
             if (lastFn!.vg.dispose !== undefined) {
                 lastFn!.vg.dispose(lastNode!.view);
+                // todo: remove all the nodes beneath it 
             }
 
             if (vg.create !== undefined) {

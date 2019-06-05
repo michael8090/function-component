@@ -26,12 +26,12 @@ const CrossList = {
      * @param root 
      * @param fn 
      */
-    visit(root: ListNode, fn: (node: ListNode, parent: ListNode, preSibling?: ListNode) => void) {
+    walk(root: ListNode, fn: (node: ListNode, parent: ListNode, preSibling?: ListNode) => void) {
         let parent = root;
         let preSibling: ListNode | undefined;
         let node = root.child;
         while (node) {
-            // fn may change the node, backup first to assure the visiting is stable
+            // fn may change the node, backup first to ensure the visiting is stable
             const {nextSibling, child} = node;
             fn(node, parent, preSibling);
             if (nextSibling !== undefined) {
