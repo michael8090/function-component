@@ -7,23 +7,28 @@
   "license": "MIT",
   "private": true,
   "dependencies": {
+    "benchmark": "^2.1.4",
+    "lodash": "^4.17.11",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
     "react-scripts-ts": "3.1.0",
     "three": "^0.105.1"
   },
   "scripts": {
-    "start": "react-scripts-ts start",
-    "build": "react-scripts-ts build",
-    "test": "react-scripts-ts test --env=jsdom",
+    "start": "react-app-rewired start --scripts-version react-scripts-ts",
+    "build": "react-app-rewired build --scripts-version react-scripts-ts",
+    "test": "react-app-rewired test --env=jsdom --scripts-version react-scripts-ts",
     "eject": "react-scripts-ts eject"
   },
   "devDependencies": {
+    "@types/benchmark": "^1.0.31",
     "@types/jest": "^24.0.13",
+    "@types/lodash": "^4.14.133",
     "@types/node": "^12.0.4",
     "@types/react": "^16.8.19",
     "@types/react-dom": "^16.8.4",
     "@types/three": "^0.103.2",
+    "react-app-rewired": "1.6.2",
     "typescript": "^3.5.1"
   }
 }
