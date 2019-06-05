@@ -1,7 +1,8 @@
 import * as _ from "lodash";
 import * as process from "process";
 import * as THREE from "three";
-import { getRoot, toFunctionComponent, View } from "./view";
+import {getRoot, toFunctionComponent,} from './functionComponent';
+import { View } from "./view";
 
 class BoxesData {
     public data: BoxData[];
@@ -47,7 +48,7 @@ class MeshView extends View {
     }
 }
 
-const MeshGroupFunctionComponent = toFunctionComponent<Function | undefined>({
+const MeshGroupFunctionComponent = toFunctionComponent<Function | undefined, MeshView>({
     create(data, parent) {
         const view = new MeshView(new THREE.Object3D());
         if (parent) {
@@ -92,7 +93,7 @@ interface BoxData {
     position: THREE.Vector3;
     rotation: THREE.Vector3;
 }
-const Box = toFunctionComponent<BoxData>({
+const Box = toFunctionComponent<BoxData, MeshView>({
     create(data, parent) {
         const geometry = new THREE.BoxGeometry(2, 2, 2);
 
@@ -140,9 +141,11 @@ const Box = toFunctionComponent<BoxData>({
     }
 });
 
-const Root = getRoot();
+const rootView = new View();
 
-const rootView = Root(() => {
+const Root = getRoot(rootView);
+
+Root(() => {
     MeshGroup(undefined);
 });
 
