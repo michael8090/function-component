@@ -26,7 +26,7 @@ interface StackNode extends CrossListNode {
 }
 
 function disposeNode(node: StackNode) {
-    if (node.u === undefined) {
+    if (node.u !== true) {
         if (node.f.vg.dispose !== undefined) {
             node.f.vg.dispose(node.v);
         }

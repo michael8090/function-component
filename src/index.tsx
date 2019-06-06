@@ -97,6 +97,8 @@ const Box = toFunctionComponent<BoxData, MeshView>({
         const geometry = new THREE.BoxGeometry(2, 2, 2);
 
         const material = new THREE.MeshNormalMaterial();
+        // material.transparent = true;
+        // material.opacity = 0.5;
         const mesh = new THREE.Mesh(geometry, material);
 
         mesh.position.copy(data.position);
@@ -241,6 +243,8 @@ function updateComponents() {
     });
 }
 
+let stop = false;
+
 function animate() {
     if (needDraw) {
         boxesData.turn();
@@ -252,10 +256,26 @@ function animate() {
         renderer.render(scene, camera);
     }
 
-    requestAnimationFrame(animate);
+    if (stop === false) {
+        requestAnimationFrame(animate);
+    }
 }
 animate();
 
+(window as any).debug = {
+    setStop: (s: boolean) => stop = s,
+    // tslint:disable-next-line:object-literal-sort-keys
+    doUpdate: updateComponents,
+    setBoxData(n: number) {
+        boxesData = new BoxesData(n);
+    },
+    draw() {
+        renderer.render(scene, camera);
+    },
+    getScene() {
+        return scene;
+    }
+};
 // tslint:disable-next-line:no-var-requires
 const benchmark = require("benchmark");
 const Benchmark = benchmark.runInContext({ _, process });
