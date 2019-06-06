@@ -1,4 +1,5 @@
 import { CrossList, CrossListNode } from './CrossLinkedList';
+import { MemoryPool } from './MemoryPool';
 
 export interface ViewGenerator<TData = {}, TView = {}> {
     create?(data: TData, parent: TView): TView | undefined;
@@ -24,158 +25,18 @@ interface StackNode extends CrossListNode {
     v?: any;
 }
 
-class MemoryPool {
-    private pool: any[] = [];
-    constructor(private create: () => any) {}
-    put(item: any) {
-        // if (this.pool.includes(item)) {
-        //     // tslint:disable-next-line:no-debugger
-        //     debugger;
-        // }
-        this.pool.push(item);
-    } 
-    get() {
-        const item = this.pool.pop();
-        if (item === undefined) {
-            return this.create();
+function disposeNode(node: StackNode) {
+    if (node.u === undefined) {
+        if (node.f.vg.dispose !== undefined) {
+            node.f.vg.dispose(node.v);
         }
-        return item;
     }
-    clear() {
-        this.pool = [];
-    }
+    node.c = undefined;
+    node.nS = undefined;
+    node.u = false;
+    node.v = undefined;
+    memoryPool.put(node);
 }
-
-class IndexManager {
-    stackLength = 0;
-    private indexInLayer = {};
-
-    getIndexInLayer() {
-        const { stackLength, indexInLayer: iIL } = this;
-        let indexInLayer: number = iIL[stackLength];
-        if (indexInLayer === undefined) {
-            indexInLayer = 1;
-        } else {
-            indexInLayer++;
-        }
-        iIL[stackLength] = indexInLayer;
-        return indexInLayer;
-    }
-    reset() {
-        this.indexInLayer = {};
-        this.stackLength = 0;
-    }
-}
-
-type LinkedListNode<T> = T & {
-    n?: LinkedListNode<T>;
-    p?: LinkedListNode<T>;
-}
-
-class LinkedList<T> {
-    private head: LinkedListNode<T> | undefined;
-    private tail: LinkedListNode<T> | undefined;
-
-    reset() {
-        this.head = undefined;
-        this.tail = undefined;
-    }
-
-    /**
-     * assume that the node is not connected to any other linked list
-     * @param v 
-     */
-    add(v: T) {
-        const value = v as T & LinkedListNode<T>;
-        if (this.head === undefined) {
-            this.head = this.tail = value;
-        } else {
-            value.p = this.tail;
-            this.tail!.n = value;
-            this.tail = value;
-        }
-    }
-    delete(node: LinkedListNode<T>) {
-        const p = node.p;
-        const next = node.n;
-        if (this.head === node) {
-            this.head = next;
-        }
-        if (this.tail === node) {
-            this.tail = p;
-        }
-        if (p !== undefined) {
-            p.n = next;
-        }
-        if (next !== undefined) {
-            next.p = p;
-        }
-        node.p = undefined;
-        node.n = undefined;
-    }
-
-    forEachValue(cb: (value: T) => void) {
-        let head: LinkedListNode<T> | undefined = this.head;
-        while(head !== undefined) {
-            const next = head.n;
-            // cb may delete `head.n`
-            // we take head as immutable when iterating
-            cb(head as T);
-            head = next;
-        }
-    }
-}
-
-class Record<T extends Object> {
-    private map: {
-        [x : string]: {
-            [y: string]: T | undefined;
-        } | undefined;
-    } = {};
-
-    reset() {
-        this.map = {};
-    }
-    put(x: number, y: number, v: T) {
-        const {map} = this;
-        const value = v ;
-        let row = map[x];
-        if (row === undefined) {
-            row = {};
-            map[x] = row;
-        }
-        row[y] = value;
-    }
-    get(x: number, y: number): T | undefined {
-        const row = this.map[x];
-        if (row !== undefined) {
-            return row[y];
-        }
-        return undefined;
-    }
-    delete(x: number, y: number) {
-        const row = this.map[x];
-        if (row !== undefined) {
-            row[y] = undefined;
-        }
-    }
-}
-
-function disposeNode(lastNode: StackNode) {
-    if (lastNode.u === undefined) {
-        if (lastNode.f.vg.dispose !== undefined) {
-            lastNode.f.vg.dispose(lastNode.v);
-        }
-    }
-    lastNode.c = undefined;
-    lastNode.nS = undefined;
-    lastNode.u = false;
-    lastNode.v = undefined;
-    memoryPool.put(lastNode);
-}
-
-
-// const indexManager = new IndexManager();
 
 let parentView: any | undefined;
 
@@ -189,7 +50,6 @@ let preSiblingInLastCallStack: StackNode | undefined;
 let preSiblingInCurrentCallStack: StackNode | undefined;
 
 let lastVisitedSiblingInLastCallStack: StackNode | undefined;
-// let lastVisitedSiblingInCurrentCallStack: StackNode | undefined;
 
 let memoryPool: MemoryPool;
 
@@ -211,33 +71,24 @@ export function toFunctionComponent<TData, TView>(input: any) {
             );
         }
         const currentFn = f as IFunctionComponent<TData, TView>;
-        // indexManager.stackLength++;
-        // const stackLength = indexManager.stackLength;
-        // const indexInLayer = indexManager.getIndexInLayer()
 
         let lastNode: StackNode | undefined;
-        // if (currentCallStack === undefined) {
-        //     lastNode = lastCallStack;
-        // } else if (lastVisitedSiblingInLastCallStack === undefined) {
-        //     // currentCallStack !== undefined && lastVisitedSiblingInLastCallStack === undefined
-        //     if (parentInLastCallStack !== undefined) {
-        //         lastNode = parentInLastCallStack.child;
-        //     }
-        // } else {
-        //     // currentCallStack !== undefined && lastVisitedSiblingInLastCallStack !== undefined
-        //     lastNode = lastVisitedSiblingInLastCallStack.nextSibling;
-        // }
+
         if (currentCallStack !== undefined) {
+            // if we already visited a node of last tree in the same layer, just visit the right node of the last visited node
             if (lastVisitedSiblingInLastCallStack !== undefined) {
                 lastNode = lastVisitedSiblingInLastCallStack.nS;
             } else {
+                // if it's the first time we visit the layer, we need to visit the first child of the layer parent
                 if (parentInLastCallStack !== undefined) {
                     lastNode = parentInLastCallStack.c;
                 }
             }
         } else {
+            // if it's the first visit, just use the root of last tree
             lastNode = lastCallStack;
         }
+        // tell the next sibling call that the last visited sibling is me
         if (lastNode !== undefined) {
             lastVisitedSiblingInLastCallStack = lastNode;
         }
@@ -247,60 +98,52 @@ export function toFunctionComponent<TData, TView>(input: any) {
 
         if (lastNode !== undefined) {
             lastFn = lastNode.f;
-
-            // for less GC
-            // lastList!.delete(lastNode);
-            // currentNode = lastNode;
-            // currentNode.fn = currentFn;
         }
-
-        currentNode = memoryPool.get();
-        currentNode.f = currentFn;
 
         let view: any;
 
         if (lastFn! === currentFn) {
+            // update
             if (vg.update !== undefined) {
                 view = vg.update(data, lastNode!.v);
             } else {
                 view = lastNode!.v;
             }
+            // mark the node is updated, so don't dispose the view when tearing down the tree
             lastNode!.u = true;
         } else if (lastFn! === undefined) {
-            // create
-            // currentNode = {
-            //     fn: currentFn
-            // };
-            // lastStackRecord.put(stackLength, indexInLayer, currentNode);
-
-
+            // create current view
             if (vg.create !== undefined) {
                 view = vg.create(data, parentView);
             }
         } else {
             // dispose last view and create current view
             if (lastFn!.vg.dispose !== undefined) {
-                // lastFn!.vg.dispose(lastNode!.view);
                 if (parentInLastCallStack) {
                     CrossList.remove(lastNode!, parentInLastCallStack, preSiblingInLastCallStack);
                 }
                 CrossList.walk(lastNode!, disposeNode);
             }
 
+            // create current view
             if (vg.create !== undefined) {
                 view = vg.create(data, parentView);
             }
         }
 
-        currentNode!.v = view;
+        currentNode = memoryPool.get();
 
-        // currentList!.add(currentNode!);
+        currentNode.f = currentFn;
+        currentNode.v = view;
+
+        // add the currentNode to the currentCallStack
         if (currentCallStack === undefined) {
             currentCallStack = currentNode;
         } else {
             CrossList.add(currentNode, parentInCurrentCallStack!, preSiblingInCurrentCallStack);
         }
 
+        // tell the next sibling, the pre sibling is me
         preSiblingInCurrentCallStack = currentNode;
 
         // done with the node, now for the children
