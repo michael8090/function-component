@@ -89,6 +89,7 @@ export function toFunctionComponent<TData, TView = {}>(vg: ViewGenerator<TData, 
         currentList!.add(currentNode);
 
         let lastNode: StackNode | undefined;
+        let lastNodeShouldBeRecycled = false;
 
         if (currentCallStack !== undefined) {
             // navigating in the lastCallStack: if we already visited a node of last tree in the same layer, just visit the right node of the last visited node
@@ -133,7 +134,8 @@ export function toFunctionComponent<TData, TView = {}>(vg: ViewGenerator<TData, 
             // mark the node is updated, so don't dispose the view when tearing down the tree
             // lastNode!.u = true;
             lastList!.delete(lastNode!);
-            memoryPool.put(lastNode!);
+            // we should not recycle the node now, as we may need to visit the children in the future
+            lastNodeShouldBeRecycled = true;
         } else if (lastFn! === undefined) {
             // create current view
             if (vg.create !== undefined) {
@@ -201,6 +203,11 @@ export function toFunctionComponent<TData, TView = {}>(vg: ViewGenerator<TData, 
     
             parentInCurrentCallStack = parentInCurrentCallStackBackup;
             preSiblingInCurrentCallStack = preSiblingInCurrentCallStackBackup;
+        }
+
+        if (lastNodeShouldBeRecycled) {
+            // now all the children is visited, it's safe to recycle the lastNode
+            memoryPool.put(lastNode!);
         }
     }
 
