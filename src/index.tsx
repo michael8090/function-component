@@ -76,8 +76,11 @@ const MeshGroup = function(child: Function | undefined) {
 };
 
 const Group = toFunctionComponent({
-    render(child: [Function]) {
-        child[0]();
+    render(child: [Function?]) {
+        const c = child[0];
+        if (c) {
+            c();
+        }
     }
 });
 
@@ -203,6 +206,24 @@ function noop(a?: any) {
     //
 }
 
+const Dummy = toFunctionComponent<[Function?], undefined>({
+    create(args) {
+        return undefined;
+    },
+    update(args, view) {
+        return view;
+    },
+    dispose(view) {
+        //
+    },
+    render([child]) {
+        if (child) {
+            child();
+        }
+    }
+
+})
+
 function updateComponents() {
     Root(() => {
         MeshGroup(() => {
@@ -260,15 +281,28 @@ function updateComponents() {
                 // });
 
                 // fastest, 10000 boxes at stable 17fps
-                // Box(data);
+                Box(data);
+
+                // nested
+                // Box(data, undefined, () => {
+                //     Box(data, undefined, () => {
+                //         Box(data)
+                //     });
+                // });
                 
                 // nested
-                Box(data, {scale: 2}, () => {
-                    Box(data, {scale: 0.5, color: 0xff00ff}, () => {
-                        Box(data, {scale: 0.5, color: 0x00ff00})
-                    });
-                });
+                // Box(data, {scale: 2}, () => {
+                //     Box(data, {scale: 0.5, color: 0xff00ff}, () => {
+                //         Box(data, {scale: 0.5, color: 0x00ff00})
+                //     });
+                // });
                 // noop(boxesData.data[i]);
+                // Dummy(() => {
+                //     Dummy(() => {
+                //         Dummy();
+                //     });
+                //     Dummy();
+                // });
             }
             // boxesData.data.forEach(Box);
         });

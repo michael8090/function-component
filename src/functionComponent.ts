@@ -1,6 +1,9 @@
 import { BiDirectionLinkedList, BiDirectionLinkedListNode } from './BiDirectionLinkedList';
-import { CrossList, CrossListNode } from './CrossLinkedList';
+import { CrossList as CL, CrossListNode } from './CrossLinkedList';
 import { MemoryPool } from './MemoryPool';
+
+// accessing a Module Symbol has overhead
+const CrossList = CL;
 
 export interface ViewGenerator<TData extends any[] = any[], TView = {}> {
     create?(data: TData, parent: TView): TView | undefined;
@@ -72,14 +75,14 @@ let preSiblingNeedToBeRecycled: boolean = false;
 // subtree layer variables definition end
 
 export function toFunctionComponent<TData extends any[], TView = {}>(vg: ViewGenerator<TData, TView>): (...data: TData) => void {
-    const f = function () {
+    function functionComponent() {
         const data = arguments as any as TData;
         if (isInRoot === undefined) {
             throw new Error(
                 `A function component should be wrapped inside a Root (use getRoot())`
             );
         }
-        const currentFn = f as IFunctionComponent<TData, TView>;
+        const currentFn = functionComponent as IFunctionComponent<TData, TView>;
 
         // create first, as memory pool will recycle lastNode latter
         const currentNode: StackNode = memoryPool.get();
@@ -221,8 +224,9 @@ export function toFunctionComponent<TData extends any[], TView = {}>(vg: ViewGen
             parentInCurrentCallStack = parentInCurrentCallStackBackup;
             preSiblingInCurrentCallStack = preSiblingInCurrentCallStackBackup;
         }
-    } as any as IFunctionComponent<TData, TView>;
+    }
 
+    const f = functionComponent as IFunctionComponent<TData, TView>;
     f.vg = vg;
     return f;
 }
@@ -260,6 +264,12 @@ export function getRoot<T>(rootView: T) {
         isInRoot = true;
         child();
         isInRoot = false;
+
+        if (preSiblingNeedToBeRecycled as boolean === true) {
+            // not child takes over it
+            // the parent (me) should do the job
+            memoryPool.put(preSiblingInLastCallStack);
+        }
 
         lastList.walk(disposeNode);
                 
