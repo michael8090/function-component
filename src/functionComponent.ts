@@ -2,15 +2,15 @@ import { BiDirectionLinkedList, BiDirectionLinkedListNode } from './BiDirectionL
 import { CrossList, CrossListNode } from './CrossLinkedList';
 import { MemoryPool } from './MemoryPool';
 
-export interface ViewGenerator<TData = {}, TView = {}> {
+export interface ViewGenerator<TData extends any[] = any[], TView = {}> {
     create?(data: TData, parent: TView): TView | undefined;
     update?(data: TData, view: TView): TView | undefined;
     dispose?(view: TView): void;
     render?(data: TData): void;
 }
 
-interface IFunctionComponent<TData = {}, TView = {}> {
-    (data: TData): void;
+interface IFunctionComponent<TData extends any[] = any[], TView = {}> {
+    (...data: TData): void;
     vg: ViewGenerator<TData, TView>;
 }
 
@@ -71,8 +71,9 @@ let preSiblingInCurrentCallStack: StackNode | undefined;
 let preSiblingNeedToBeRecycled: boolean = false;
 // subtree layer variables definition end
 
-export function toFunctionComponent<TData, TView = {}>(vg: ViewGenerator<TData, TView>): (data: TData) => void {
-    function f(data: TData) {
+export function toFunctionComponent<TData extends any[], TView = {}>(vg: ViewGenerator<TData, TView>): (...data: TData) => void {
+    const f = function () {
+        const data = arguments as any as TData;
         if (isInRoot === undefined) {
             throw new Error(
                 `A function component should be wrapped inside a Root (use getRoot())`
@@ -220,7 +221,7 @@ export function toFunctionComponent<TData, TView = {}>(vg: ViewGenerator<TData, 
             parentInCurrentCallStack = parentInCurrentCallStackBackup;
             preSiblingInCurrentCallStack = preSiblingInCurrentCallStackBackup;
         }
-    }
+    } as any as IFunctionComponent<TData, TView>;
 
     f.vg = vg;
     return f;

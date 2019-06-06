@@ -48,7 +48,7 @@ class MeshView extends View {
     }
 }
 
-const MeshGroupFunctionComponent = toFunctionComponent<Function | undefined, MeshView>({
+const MeshGroupFunctionComponent = toFunctionComponent<[Function?], MeshView>({
     create(data, parent) {
         const view = new MeshView(new THREE.Object3D());
         if (parent) {
@@ -64,7 +64,7 @@ const MeshGroupFunctionComponent = toFunctionComponent<Function | undefined, Mes
             view.dispose();
         }
     },
-    render(data) {
+    render([data]) {
         if (data) {
             data();
         }
@@ -76,8 +76,8 @@ const MeshGroup = function(child: Function | undefined) {
 };
 
 const Group = toFunctionComponent({
-    render(child: Function) {
-        child();
+    render(child: [Function]) {
+        child[0]();
     }
 });
 
@@ -92,17 +92,34 @@ interface BoxData {
     position: THREE.Vector3;
     rotation: THREE.Vector3;
 }
-const Box = toFunctionComponent<BoxData, MeshView>({
-    create(data, parent) {
-        const geometry = new THREE.BoxGeometry(2, 2, 2);
 
-        const material = new THREE.MeshNormalMaterial();
-        // material.transparent = true;
-        // material.opacity = 0.5;
+function updateStyle(mesh: THREE.Mesh, data: BoxData, config?: {scale?: number, color?: number}) {
+    mesh.position.copy(data.position);
+    mesh.rotation.set(data.rotation.x, data.rotation.y, data.rotation.z);
+
+    if (config) {
+        if (config.scale) {
+            mesh.scale.set(config.scale, config.scale, config.scale);
+        }
+        if (config.color) {
+            (mesh.material as THREE.MeshBasicMaterial).color.set(config.color);
+        }
+    }
+}
+
+const Box = toFunctionComponent<[BoxData, {scale?: number, color?: number}?, Function?], MeshView>({
+    create([data, config], parent) {
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
+
+        const material = new THREE.MeshBasicMaterial( { 
+            color: (config && config.color) || 0x00f0f0,
+            wireframe: true,
+        } );
+        material.transparent = true;
+        material.opacity = 1;
         const mesh = new THREE.Mesh(geometry, material);
 
-        mesh.position.copy(data.position);
-        mesh.rotation.set(data.rotation.x, data.rotation.y, data.rotation.z);
+        updateStyle(mesh, data, config);
 
         const view = new MeshView(mesh);
         if (parent) {
@@ -110,15 +127,10 @@ const Box = toFunctionComponent<BoxData, MeshView>({
         }
         return view;
     },
-    update(data, view) {
+    update([data, config], view) {
         if (needDraw) {
             const mesh = (view as MeshView).mesh;
-            mesh.position.copy(data.position);
-            mesh.rotation.set(
-                data.rotation.x,
-                data.rotation.y,
-                data.rotation.z
-            );
+            updateStyle(mesh as THREE.Mesh, data, config);
         }
         return view;
     },
@@ -138,6 +150,11 @@ const Box = toFunctionComponent<BoxData, MeshView>({
                 console.warn("not supported multi materials");
             }
             view.dispose();
+        }
+    },
+    render([data, config, child]) {
+        if (child) {
+            child();
         }
     }
 });
@@ -234,14 +251,23 @@ function updateComponents() {
                 //   });
                 // });
 
+                const data = boxesData.data[i];
+
                 // Group(() => {
                 //     Group(() => {
-                //       Box(boxesData.data[i]);
+                //       Box(data);
                 //     });
                 // });
 
                 // fastest, 10000 boxes at stable 17fps
-                Box(boxesData.data[i]);
+                // Box(data);
+                
+                // nested
+                Box(data, {scale: 2}, () => {
+                    Box(data, {scale: 0.5, color: 0xff00ff}, () => {
+                        Box(data, {scale: 0.5, color: 0x00ff00})
+                    });
+                });
                 // noop(boxesData.data[i]);
             }
             // boxesData.data.forEach(Box);
