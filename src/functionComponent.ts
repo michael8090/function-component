@@ -38,10 +38,17 @@ function disposeNode(node: StackNode) {
     memoryPool.put(node);
 }
 
-let parentView: any | undefined;
-
+// the variables shared by all function calls of a root
 let lastCallStack: StackNode | undefined;
 let currentCallStack: StackNode | undefined;
+
+let memoryPool: MemoryPool;
+
+let isInRoot = false;
+// root variables definition end
+
+// the variables shared inside a layer of a subtree
+let parentView: any | undefined;
 
 let parentInLastCallStack: StackNode | undefined;
 let parentInCurrentCallStack: StackNode | undefined;
@@ -50,10 +57,7 @@ let preSiblingInLastCallStack: StackNode | undefined;
 let preSiblingInCurrentCallStack: StackNode | undefined;
 
 let lastVisitedSiblingInLastCallStack: StackNode | undefined;
-
-let memoryPool: MemoryPool;
-
-let isInRoot = false;
+// subtree layer variables definition end
 
 export function toFunctionComponent<T extends Function>(fn: {
     (onCreate: Handler, onUpdate: Handler, onDispose: Handler): T;
@@ -182,8 +186,6 @@ export function toFunctionComponent<TData, TView>(input: any) {
             parentInCurrentCallStack = parentInCurrentCallStackBackup;
             preSiblingInCurrentCallStack = preSiblingInCurrentCallStackBackup;
         }
-
-        // indexManager.stackLength--;
     }
     f.vg = vg;
     return f;
@@ -240,12 +242,6 @@ export function getRoot<T>(rootView: T) {
     const cachedMemoryPool = new MemoryPool(createStackNode);
 
     return function Root(child: Function) {
-        // cachedCurrentList.reset();
-        // indexManager.reset();
-        // lastStackRecord = cachedLastStackRecord;
-        // lastList = cachedLastList;
-        // currentList = cachedCurrentList;
-
         lastCallStack = cachedLastStack;
         parentInLastCallStack = undefined;
         preSiblingInLastCallStack = undefined;
@@ -254,7 +250,6 @@ export function getRoot<T>(rootView: T) {
         currentCallStack = cachedCurrentStack;
         parentInCurrentCallStack = undefined;
         preSiblingInCurrentCallStack = undefined;
-        // lastVisitedSiblingInCurrentCallStack = undefined
 
         parentView = rootView;
 
@@ -268,8 +263,6 @@ export function getRoot<T>(rootView: T) {
             CrossList.walk(lastCallStack, disposeNode);
         }
                 
-        // lastList.reset();
-
         lastCallStack = undefined;
 
         // swap the two list
