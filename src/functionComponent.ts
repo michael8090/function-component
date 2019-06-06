@@ -59,15 +59,7 @@ let preSiblingInCurrentCallStack: StackNode | undefined;
 let lastVisitedSiblingInLastCallStack: StackNode | undefined;
 // subtree layer variables definition end
 
-export function toFunctionComponent<T extends Function>(fn: {
-    (onCreate: Handler, onUpdate: Handler, onDispose: Handler): T;
-}): T;
-export function toFunctionComponent<TData, TView = {}>(vg: ViewGenerator<TData, TView>): (data: TData) => void;
-export function toFunctionComponent<TData, TView>(input: any) {
-    if (typeof input === "function") {
-        return markAsFunctionComponent(input);
-    }
-    const vg = input as ViewGenerator<TData, TView>;
+export function toFunctionComponent<TData, TView = {}>(vg: ViewGenerator<TData, TView>): (data: TData) => void {
     function f(data: TData) {
         if (isInRoot === undefined) {
             throw new Error(
@@ -187,47 +179,9 @@ export function toFunctionComponent<TData, TView>(input: any) {
             preSiblingInCurrentCallStack = preSiblingInCurrentCallStackBackup;
         }
     }
+
     f.vg = vg;
     return f;
-}
-
-interface DummyFunction {
-    (): undefined;
-}
-
-interface Handler {
-    (handler: DummyFunction): void;
-}
-
-function markAsFunctionComponent<T extends Function>(fn: {
-    (onCreate: Handler, onUpdate: Handler, onDispose: Handler): T;
-}): T {
-    let onCreate: DummyFunction | undefined;
-    let onUpdate: DummyFunction | undefined;
-    let onDispose: DummyFunction | undefined;
-    const Component = fn(
-        f => (onCreate = f),
-        f => (onUpdate = f),
-        f => (onDispose = f)
-    );
-    const Generator: ViewGenerator<any> = {
-        render(data) {
-            Component(data);
-        }
-    };
-    if (onCreate) {
-        Generator.create = onCreate;
-    }
-    if (onUpdate) {
-        Generator.update = onUpdate;
-    }
-    if (onDispose) {
-        Generator.dispose = onDispose;
-    }
-    const FunctionComponent = toFunctionComponent(Generator);
-    return (function() {
-        FunctionComponent.apply(null, arguments);
-    } as any) as T;
 }
 
 function createStackNode() {

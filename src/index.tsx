@@ -75,12 +75,11 @@ const MeshGroup = function(child: Function | undefined) {
     MeshGroupFunctionComponent(child);
 };
 
-const Group = toFunctionComponent(
-    () =>
-        function(child: Function) {
-            child();
-        }
-);
+const Group = toFunctionComponent({
+    render(child: Function) {
+        child();
+    }
+});
 
 let needDraw = true;
 const toggle = document.createElement("input");
