@@ -1,4 +1,6 @@
-interface CrossListNode {
+import {Queue, QueueNode} from './Queue';
+
+interface CrossListNode extends QueueNode {
     /**
      * child
      */
@@ -10,7 +12,7 @@ interface CrossListNode {
 }
 
 
-const queue: CrossListNode[] = [];
+const queue: Queue<CrossListNode> = new Queue();
 const CrossList = {
     remove(node: CrossListNode, parent: CrossListNode, preSibling?: CrossListNode) {
         if (preSibling === undefined) {
@@ -36,7 +38,7 @@ const CrossList = {
     walk(root: CrossListNode, fn: (node: CrossListNode) => void) {
         // todo: if the perf is not good, we can try LinkedList
         queue.push(root);
-        while(queue.length !== 0) {
+        while(queue.isEmpty() !== true) {
             let node = queue.shift();
             while(node !== undefined) {
                 const {nS: nextSibling, c: child} = node;
