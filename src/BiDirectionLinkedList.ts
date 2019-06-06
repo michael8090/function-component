@@ -1,11 +1,17 @@
-type BiDirectionLinkedListNode<T> = T & {
-    n?: BiDirectionLinkedListNode<T>;
-    p?: BiDirectionLinkedListNode<T>;
+export interface BiDirectionLinkedListNode {
+    /**
+     * next node in a bi directional list 
+     */
+    bn?: BiDirectionLinkedListNode;
+    /**
+     * previous node in a bi directional list 
+     */
+    bp?: BiDirectionLinkedListNode;
 }
 
-class BiDirectionLinkedList<T> {
-    private head: BiDirectionLinkedListNode<T> | undefined;
-    private tail: BiDirectionLinkedListNode<T> | undefined;
+export class BiDirectionLinkedList<T extends BiDirectionLinkedListNode> {
+    private head: BiDirectionLinkedListNode | undefined;
+    private tail: BiDirectionLinkedListNode | undefined;
 
     reset() {
         this.head = undefined;
@@ -16,19 +22,18 @@ class BiDirectionLinkedList<T> {
      * assume that the node is not connected to any other linked list
      * @param v 
      */
-    add(v: T) {
-        const value = v as T & BiDirectionLinkedListNode<T>;
+    add(value: T) {
         if (this.head === undefined) {
             this.head = this.tail = value;
         } else {
-            value.p = this.tail;
-            this.tail!.n = value;
+            value.bp = this.tail;
+            this.tail!.bn = value;
             this.tail = value;
         }
     }
-    delete(node: BiDirectionLinkedListNode<T>) {
-        const p = node.p;
-        const next = node.n;
+    delete(node: T) {
+        const p = node.bp;
+        const next = node.bn;
         if (this.head === node) {
             this.head = next;
         }
@@ -36,20 +41,20 @@ class BiDirectionLinkedList<T> {
             this.tail = p;
         }
         if (p !== undefined) {
-            p.n = next;
+            p.bn = next;
         }
         if (next !== undefined) {
-            next.p = p;
+            next.bp = p;
         }
-        node.p = undefined;
-        node.n = undefined;
+        node.bp = undefined;
+        node.bn = undefined;
     }
 
-    forEachValue(cb: (value: T) => void) {
-        let head: BiDirectionLinkedListNode<T> | undefined = this.head;
+    walk(cb: (value: T) => void) {
+        let head = this.head;
         while(head !== undefined) {
-            const next = head.n;
-            // cb may delete `head.n`
+            const next = head.bn;
+            // cb may delete `head.bn`
             // we take head as immutable when iterating
             cb(head as T);
             head = next;

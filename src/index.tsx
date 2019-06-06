@@ -200,39 +200,39 @@ function updateComponents() {
                 // MeshGroup(F1);
 
                 // it's slower, but faster than react
-                // Group(() => {
-                //   Group(() => {
-                //     Group(() => {
-                //       Group(() => {
-                //         Group(() => {
-                //           Group(() => {
-                //             Group(() => {
-                //               Group(() => {
-                //                 Group(() => {
-                //                   Group(() => {
-                //                     Group(() => {
-                //                       Group(() => {
-                //                         Group(() => {
-                //                           Group(() => {
-                //                             Group(() => {
-                //                               Group(() => {
-                //                                 Box(boxesData.data[i]);
-                //                               });
-                //                             });
-                //                           });
-                //                         });
-                //                       });
-                //                     });
-                //                   });
-                //                 });
-                //               });
-                //             });
-                //           });
-                //         });
-                //       });
-                //     });
-                //   });
-                // });
+                Group(() => {
+                  Group(() => {
+                    Group(() => {
+                      Group(() => {
+                        Group(() => {
+                          Group(() => {
+                            Group(() => {
+                              Group(() => {
+                                Group(() => {
+                                  Group(() => {
+                                    Group(() => {
+                                      Group(() => {
+                                        Group(() => {
+                                          Group(() => {
+                                            Group(() => {
+                                              Group(() => {
+                                                Box(boxesData.data[i]);
+                                              });
+                                            });
+                                          });
+                                        });
+                                      });
+                                    });
+                                  });
+                                });
+                              });
+                            });
+                          });
+                        });
+                      });
+                    });
+                  });
+                });
 
                 // fastest, 10000 boxes at stable 17fps
                 Box(boxesData.data[i]);
