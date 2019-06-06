@@ -1,6 +1,12 @@
 interface CrossListNode {
-    child?: this;
-    nextSibling?: this;
+    /**
+     * child
+     */
+    c?: this;
+    /**
+     * nextSibling
+     */
+    nS?: this;
 }
 
 
@@ -8,18 +14,18 @@ const queue: CrossListNode[] = [];
 const CrossList = {
     remove(node: CrossListNode, parent: CrossListNode, preSibling?: CrossListNode) {
         if (preSibling === undefined) {
-            parent.child = node.nextSibling;
+            parent.c = node.nS;
         } else {
-            preSibling.nextSibling = node.nextSibling;
+            preSibling.nS = node.nS;
         }
     },
 
     add(node: CrossListNode, parent: CrossListNode, preSibling?: CrossListNode) {
         if (preSibling === undefined) {
-            parent.child = node;
+            parent.c = node;
         } else {
-            node.nextSibling = preSibling.nextSibling;
-            preSibling.nextSibling = node;
+            node.nS = preSibling.nS;
+            preSibling.nS = node;
         }
     },
     /**
@@ -30,12 +36,12 @@ const CrossList = {
     walk(root: CrossListNode, fn: (node: CrossListNode) => void) {
         // todo: if the perf is not good, we can try LinkedList
         queue.push(root);
-        while(queue.length) {
+        while(queue.length !== 0) {
             let node = queue.shift();
-            while(node) {
-                const {nextSibling, child} = node;
+            while(node !== undefined) {
+                const {nS: nextSibling, c: child} = node;
                 fn(node);
-                if (child) {
+                if (child !== undefined) {
                     queue.push(child);
                 }
                 node = nextSibling;
