@@ -1,7 +1,7 @@
-export class View {
-    parent: View | undefined;
-    children: View[] = [];
-    add(child: View) {
+export class View<TChild extends View<any, any>, TParent extends View<any, any>> {
+    parent: TParent | undefined;
+    children: TChild[] = [];
+    add(child: TChild) {
         child.parent = this;
         this.children.push(child);
     }

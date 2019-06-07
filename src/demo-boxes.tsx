@@ -28,7 +28,7 @@ class BoxesData {
     }
 }
 
-class MeshView extends View {
+class MeshView extends View<MeshView, MeshView> {
     constructor(public mesh: THREE.Object3D) {
         super();
     }
@@ -39,7 +39,7 @@ class MeshView extends View {
     }
     remove(i: number) {
         super.remove(i);
-        const child = this.children[i] as MeshView;
+        const child = this.children[i];
         this.mesh.remove(child.mesh);
     }
     dispose() {
@@ -132,15 +132,14 @@ const Box = toFunctionComponent<[BoxData, {scale?: number, color?: number}?, Fun
     },
     update([data, config], view) {
         if (needDraw) {
-            const mesh = (view as MeshView).mesh;
+            const mesh = view.mesh;
             updateStyle(mesh as THREE.Mesh, data, config);
         }
         return view;
     },
     dispose(view) {
         if (view) {
-            // todo: too many "as" here
-            const mesh = (view as MeshView).mesh as THREE.Mesh;
+            const mesh = view.mesh as THREE.Mesh;
             if (mesh.parent) {
                 mesh.parent.remove(mesh);
             }
