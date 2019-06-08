@@ -1,7 +1,7 @@
 import * as _ from "lodash";
 import * as process from "process";
 import * as THREE from "three";
-import {getRoot, toFunctionComponent,} from './functionComponent';
+import {getRoot, toFunctionComponent, ViewGenerator,} from './functionComponent';
 import { View } from "./view";
 
 class BoxesData {
@@ -205,27 +205,33 @@ function noop(a?: any) {
     //
 }
 
-const Dummy = toFunctionComponent<[Function?], undefined>({
+const DummyVg: ViewGenerator<[(Function | undefined)?], undefined> = {
     create(args) {
         return undefined;
     },
-    update(args, view) {
-        return view;
-    },
+    // update(args, view) {
+    //     return view;
+    // },
     dispose(view) {
         //
     },
-    render([child]) {
-        if (child) {
-            child();
-        }
-    }
+    // render([child]) {
+    //     if (child) {
+    //         child();
+    //     }
+    // },
+    // render() {
+    //     //
+    // }
 
-})
+}
+
+const Dummy = toFunctionComponent<[Function?], undefined>(DummyVg);
+const DummyData: [undefined] = [undefined];
 
 function updateComponents() {
     Root(() => {
-        MeshGroup(() => {
+        // MeshGroup(() => {
             for (let i = 0, l = boxesData.data.length; i < l; i++) {
                 // slow, 9fps, with a huge GC down to 1fps
                 // function F() {
@@ -271,7 +277,7 @@ function updateComponents() {
                 //   });
                 // });
 
-                const data = boxesData.data[i];
+                // const data = boxesData.data[i];
 
                 // Group(() => {
                 //     Group(() => {
@@ -280,7 +286,7 @@ function updateComponents() {
                 // });
 
                 // fastest, 10000 boxes at stable 17fps
-                Box(data);
+                // Box(data);
 
                 // nested
                 // Box(data, undefined, () => {
@@ -302,9 +308,11 @@ function updateComponents() {
                 //     });
                 //     Dummy();
                 // });
+                Dummy();
+                // DummyVg.update!(DummyData, undefined);
             }
             // boxesData.data.forEach(Box);
-        });
+        // });
     });
 }
 

@@ -7,10 +7,10 @@ export class MemoryPool {
     } 
     get() {
         const item = this.pool.shift();
-        if (item === undefined) {
-            return this.create();
+        if (item !== undefined) {
+            return item;
         }
-        return item;
+        return this.create();
     }
     clear() {
         this.pool.reset();

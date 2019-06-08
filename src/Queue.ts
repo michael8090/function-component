@@ -14,7 +14,6 @@ export class Queue<T extends QueueNode = {}> {
     }
 
     push(node: T) {
-        node.qn = undefined;
         if (this.head === undefined) {
             this.head = this.tail = node;
         } else {
@@ -24,14 +23,14 @@ export class Queue<T extends QueueNode = {}> {
     }
 
     shift(): T | undefined {
-        const {tail} = this;
-        if (this.head === tail) {
+        const {head, tail} = this;
+        if (head === tail) {
             const node = tail;
             this.head = this.tail = undefined;
             return node as T | undefined;
         } else {
-            const node = this.head!;
-            this.head = node.qn;
+            const node = head!;
+            this.head = head!.qn;
             return node as T;
         }
     }

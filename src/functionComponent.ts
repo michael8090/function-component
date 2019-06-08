@@ -77,11 +77,11 @@ let preSiblingNeedToBeRecycled: boolean = false;
 export function toFunctionComponent<TData extends any[], TView = {}>(vg: ViewGenerator<TData, TView>): (...data: TData) => void {
     function functionComponent() {
         const data = arguments as any as TData;
-        if (isInRoot === undefined) {
-            throw new Error(
-                `A function component should be wrapped inside a Root (use getRoot())`
-            );
-        }
+        // if (isInRoot === undefined) {
+        //     throw new Error(
+        //         `A function component should be wrapped inside a Root (use getRoot())`
+        //     );
+        // }
         const currentFn = functionComponent as IFunctionComponent<TData, TView>;
 
         // create first, as memory pool will recycle lastNode latter
@@ -89,7 +89,7 @@ export function toFunctionComponent<TData extends any[], TView = {}>(vg: ViewGen
         currentNode.c = undefined;
         currentNode.nS = undefined;
         // currentNode.u = false;
-        currentNode.v = undefined;
+        // currentNode.v = undefined;
         currentNode.f = currentFn;
         currentNode.bn = undefined;
         currentNode.bp = undefined;
@@ -148,7 +148,7 @@ export function toFunctionComponent<TData extends any[], TView = {}>(vg: ViewGen
         } else {
             // dispose last view and create current view
             if (lastFn!.vg.dispose !== undefined) {
-                if (parentInLastCallStack) {
+                if (parentInLastCallStack !== undefined) {
                     CrossList.remove(lastNode!, parentInLastCallStack, preSiblingInLastCallStack);
                 }
                 CrossList.walk(lastNode!, removeFromLastListAndDispose);

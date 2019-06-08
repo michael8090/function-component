@@ -20,14 +20,16 @@ export class BiDirectionLinkedList<T extends BiDirectionLinkedListNode> {
 
     /**
      * assume that the node is not connected to any other linked list
+     * make sure you clear the bp and bn before call add
      * @param v 
      */
     add(value: T) {
         if (this.head === undefined) {
             this.head = this.tail = value;
         } else {
-            value.bp = this.tail;
-            this.tail!.bn = value;
+            const {tail} = this;
+            value.bp = tail;
+            tail!.bn = value;
             this.tail = value;
         }
     }
@@ -46,8 +48,8 @@ export class BiDirectionLinkedList<T extends BiDirectionLinkedListNode> {
         if (next !== undefined) {
             next.bp = p;
         }
-        node.bp = undefined;
-        node.bn = undefined;
+        // node.bp = undefined;
+        // node.bn = undefined;
     }
 
     walk(cb: (value: T) => void) {

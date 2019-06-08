@@ -60,7 +60,7 @@ const sampleArea: Area = {
     ]
 };
 
-const source: RawData = (new Array(10000)).fill(sampleArea);
+const source: RawData = (new Array(100000)).fill(sampleArea);
 
 class PrimitiveViewWithCachedData<TPropertyName extends string | number | symbol,
 TPropertyValue extends (string | number)> extends PrimitiveView<TPropertyName, TPropertyValue> {
@@ -147,8 +147,50 @@ function transform() {
     });
     
     // tslint:disable-next-line:no-console
-    console.log(report);
+    // console.log(report);
 }
+
+function reGenerateJson() {
+    const people: ReportPeople[] = []
+    source.forEach(area => {
+        area.people.forEach(p => {
+            people.push({
+                name: p.name,
+                sex: p.sex,
+                range: ageToRange(p.age)
+            })
+        })
+    })
+    return ({
+        people,
+        female: people.reduce((pre, p) => {
+            if (p.sex === 'female') {
+                pre ++;
+            }
+            return pre;
+        }, 0),
+        male: report.people.reduce((pre, p) => {
+            if (p.sex === 'female') {
+                pre ++;
+            }
+            return pre;
+        }, 0),
+        zone: source.reduce((pre, area) => {
+            if (area.zipCode > 0.5) {
+                pre ++;
+            }
+            return pre;
+        }, 0) > 0.5 * source.length ? 'south' : 'north'
+    }) as Report;
+}
+
+function animate() {
+    // transform();
+    reGenerateJson();
+    requestAnimationFrame(animate);
+}
+
+animate();
 
 function logTime(name: string, fn: Function) {
     const t0 = performance.now();
