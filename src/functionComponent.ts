@@ -236,11 +236,17 @@ export function toFunctionComponent<TData extends any[], TView = {}>(vg: ViewGen
             // !!!children enter!!!
             currentFn.vg.render(data);
             // !!!children done!!!
+            
+            if (preSiblingInCurrentCallStack) {
+                preSiblingInCurrentCallStack!.nS = undefined;
+            }
 
             parentView = parentViewBackup;
             parentInCurrentCallStack = parentInCurrentCallStackBackup;
             preSiblingInCurrentCallStack = preSiblingInCurrentCallStackBackup;
             lastNode = lastNodeBackup;
+        } else {
+            currentNode.c = undefined;
         }
     }
 
