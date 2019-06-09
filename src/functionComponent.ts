@@ -148,7 +148,7 @@ export function toFunctionComponent<TData extends any[], TView = {}>(vg: ViewGen
         } else {
             // dispose last view and create current view
             if (lastFn!.vg.dispose !== undefined) {
-                if (parentInLastCallStack) {
+                if (parentInLastCallStack !== undefined) {
                     CrossList.remove(lastNode!, parentInLastCallStack, preSiblingInLastCallStack);
                 }
                 CrossList.walk(lastNode!, removeFromLastListAndDispose);
