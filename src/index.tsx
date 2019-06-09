@@ -224,89 +224,93 @@ const Dummy = toFunctionComponent<[Function?], undefined>({
 
 })
 
+function UpdateBoxes() {
+    for (let i = 0, l = boxesData.data.length; i < l; i++) {
+        // slow, 9fps, with a huge GC down to 1fps
+        // function F() {
+        //   Box(boxesData.data[i]);
+        // }
+        // function F1() {
+        //   MeshGroup(F);
+        // }
+        // MeshGroup(F1);
+
+        // it's slower, but faster than react
+        // Group(() => {
+        //   Group(() => {
+        //     Group(() => {
+        //       Group(() => {
+        //         Group(() => {
+        //           Group(() => {
+        //             Group(() => {
+        //               Group(() => {
+        //                 Group(() => {
+        //                   Group(() => {
+        //                     Group(() => {
+        //                       Group(() => {
+        //                         Group(() => {
+        //                           Group(() => {
+        //                             Group(() => {
+        //                               Group(() => {
+        //                                 Box(boxesData.data[i]);
+        //                               });
+        //                             });
+        //                           });
+        //                         });
+        //                       });
+        //                     });
+        //                   });
+        //                 });
+        //               });
+        //             });
+        //           });
+        //         });
+        //       });
+        //     });
+        //   });
+        // });
+
+        const data = boxesData.data[i];
+
+        // Group(() => {
+        //     Group(() => {
+        //       Box(data);
+        //     });
+        // });
+
+        // fastest, 10000 boxes at stable 17fps
+        Box(data);
+
+        // nested
+        // Box(data, undefined, () => {
+        //     Box(data, undefined, () => {
+        //         Box(data)
+        //     });
+        // });
+        
+        // nested
+        // Box(data, {scale: 2}, () => {
+        //     Box(data, {scale: 0.5, color: 0xff00ff}, () => {
+        //         Box(data, {scale: 0.5, color: 0x00ff00})
+        //     });
+        // });
+        // noop(boxesData.data[i]);
+        // Dummy(() => {
+        //     Dummy(() => {
+        //         Dummy();
+        //     });
+        //     Dummy();
+        // });
+    }
+    // boxesData.data.forEach(Box);
+}
+
+function MeshGroupWithBoxes() {
+    MeshGroup(UpdateBoxes);
+}
+
 function updateComponents() {
-    Root(() => {
-        MeshGroup(() => {
-            for (let i = 0, l = boxesData.data.length; i < l; i++) {
-                // slow, 9fps, with a huge GC down to 1fps
-                // function F() {
-                //   Box(boxesData.data[i]);
-                // }
-                // function F1() {
-                //   MeshGroup(F);
-                // }
-                // MeshGroup(F1);
-
-                // it's slower, but faster than react
-                // Group(() => {
-                //   Group(() => {
-                //     Group(() => {
-                //       Group(() => {
-                //         Group(() => {
-                //           Group(() => {
-                //             Group(() => {
-                //               Group(() => {
-                //                 Group(() => {
-                //                   Group(() => {
-                //                     Group(() => {
-                //                       Group(() => {
-                //                         Group(() => {
-                //                           Group(() => {
-                //                             Group(() => {
-                //                               Group(() => {
-                //                                 Box(boxesData.data[i]);
-                //                               });
-                //                             });
-                //                           });
-                //                         });
-                //                       });
-                //                     });
-                //                   });
-                //                 });
-                //               });
-                //             });
-                //           });
-                //         });
-                //       });
-                //     });
-                //   });
-                // });
-
-                const data = boxesData.data[i];
-
-                // Group(() => {
-                //     Group(() => {
-                //       Box(data);
-                //     });
-                // });
-
-                // fastest, 10000 boxes at stable 17fps
-                Box(data);
-
-                // nested
-                // Box(data, undefined, () => {
-                //     Box(data, undefined, () => {
-                //         Box(data)
-                //     });
-                // });
-                
-                // nested
-                // Box(data, {scale: 2}, () => {
-                //     Box(data, {scale: 0.5, color: 0xff00ff}, () => {
-                //         Box(data, {scale: 0.5, color: 0x00ff00})
-                //     });
-                // });
-                // noop(boxesData.data[i]);
-                // Dummy(() => {
-                //     Dummy(() => {
-                //         Dummy();
-                //     });
-                //     Dummy();
-                // });
-            }
-            // boxesData.data.forEach(Box);
-        });
-    });
+    Root(MeshGroupWithBoxes);
 }
 
 let stop = false;
