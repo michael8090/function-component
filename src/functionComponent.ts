@@ -237,7 +237,7 @@ export function toFunctionComponent<TData extends any[], TView = {}>(vg: ViewGen
             currentFn.vg.render(data);
             // !!!children done!!!
             
-            if (preSiblingInCurrentCallStack) {
+            if (preSiblingInCurrentCallStack !== undefined) {
                 preSiblingInCurrentCallStack!.nS = undefined;
             }
 
