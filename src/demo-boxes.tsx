@@ -182,13 +182,15 @@ const camera = new THREE.PerspectiveCamera(
 scene.add(rootMesh);
 
 let boxesData = new BoxesData(1);
+let n = 0;
 
 const input = document.createElement("input");
 input.value = boxesData.data.length + "";
 input.onchange = e => {
     const count = parseInt(input.value, 10);
     if (!isNaN(count)) {
-        boxesData = new BoxesData(count);
+        n = count;
+        // boxesData = new BoxesData(count);
         // tslint:disable-next-line:no-console
         console.log(count);
     }
@@ -229,10 +231,161 @@ const DummyVg: ViewGenerator<[(Function | undefined)?], undefined> = {
 const Dummy = toFunctionComponent<[Function?], undefined>(DummyVg);
 const DummyData: [undefined] = [undefined];
 
+
+class Obj {
+    test() {
+        if (odd) {
+            this.setSelf(this);
+        } else {
+            this.unSetSelf(this);
+        }
+    }
+    setSelf(obj: any) {
+        obj.k1 = obj;
+        obj.k2 = obj;
+        obj.k3 = obj;
+        obj.k4 = obj;
+        obj.k5 = obj;
+        obj.k6 = obj;
+        obj.k7 = obj;
+        obj.k8 = obj;
+        obj.k9 = obj;
+        obj.k10 = obj;
+        obj.k11 = obj;
+        obj.k12 = obj;
+        obj.k13 = obj;
+        obj.k14 = obj;
+        obj.k15 = obj;
+        obj.k16 = obj;
+    }
+    unSetSelf(obj: any) {
+        obj.k1 = undefined;
+        obj.k2 = undefined;
+        obj.k3 = undefined;
+        obj.k4 = undefined;
+        obj.k5 = undefined;
+        obj.k6 = undefined;
+        obj.k7 = undefined;
+        obj.k8 = undefined;
+        obj.k9 = undefined;
+        obj.k10 = undefined;
+        obj.k11 = undefined;
+        obj.k12 = undefined;
+        obj.k13 = undefined;
+        obj.k14 = undefined;
+        obj.k15 = undefined;
+        obj.k16 = undefined;
+    }
+}
+
+const objs = (new Array(10000000)).fill(1).map(() => new Obj());
+let odd = false;
+
+// tslint:disable-next-line:no-shadowed-variable
+const setSelf = (() => function setSelf(obj: any) {
+    obj.k1 = obj;
+    obj.k2 = obj;
+    obj.k3 = obj;
+    obj.k4 = obj;
+    obj.k5 = obj;
+    obj.k6 = obj;
+    obj.k7 = obj;
+    obj.k8 = obj;
+    obj.k9 = obj;
+    obj.k10 = obj;
+    obj.k11 = obj;
+    obj.k12 = obj;
+    obj.k13 = obj;
+    obj.k14 = obj;
+    obj.k15 = obj;
+    obj.k16 = obj;
+})();
+// tslint:disable-next-line:no-shadowed-variable
+const unSetSelf = (() => function unSetSelf(obj: any) {
+    obj.k1 = undefined;
+    obj.k2 = undefined;
+    obj.k3 = undefined;
+    obj.k4 = undefined;
+    obj.k5 = undefined;
+    obj.k6 = undefined;
+    obj.k7 = undefined;
+    obj.k8 = undefined;
+    obj.k9 = undefined;
+    obj.k10 = undefined;
+    obj.k11 = undefined;
+    obj.k12 = undefined;
+    obj.k13 = undefined;
+    obj.k14 = undefined;
+    obj.k15 = undefined;
+    obj.k16 = undefined;
+})();
+
+
+function testGC() {
+    const fn = odd ? unSetSelf : setSelf;
+    for (let i = 0, l = objs.length; i < l; i++) {
+        // objs[i].test();
+        fn(objs[i]);
+        f4();
+    }
+}
+
+function f1(a: any) {
+    const args = arguments;
+    const x1 = arguments;
+    const x2 = arguments;
+    const x3 = arguments;
+    const x4 = arguments;
+    const x5 = arguments;
+    const x7 = arguments;
+    const x8 = arguments;
+    const x9 = arguments;
+    return args;
+}
+
+function f2(a: any) {
+    const args = arguments;
+    const x1 = arguments;
+    const x2 = arguments;
+    const x3 = arguments;
+    const x4 = arguments;
+    const x5 = arguments;
+    const x7 = arguments;
+    const x8 = arguments;
+    const x9 = arguments;
+    return f1(args);
+}
+
+function f3(a: any) {
+    const args = arguments;
+    const x1 = arguments;
+    const x2 = arguments;
+    const x3 = arguments;
+    const x4 = arguments;
+    const x5 = arguments;
+    const x7 = arguments;
+    const x8 = arguments;
+    const x9 = arguments;
+    return f2(args);
+}
+
+function f4() {
+    const args = arguments;
+    const x1 = arguments;
+    const x2 = arguments;
+    const x3 = arguments;
+    const x4 = arguments;
+    const x5 = arguments;
+    const x7 = arguments;
+    const x8 = arguments;
+    const x9 = arguments;
+    return f3(args);
+}
+
 function updateComponents() {
     Root(() => {
         // MeshGroup(() => {
-            for (let i = 0, l = boxesData.data.length; i < l; i++) {
+            // for (let i = 0, l = n; i < l; i++) {
                 // slow, 9fps, with a huge GC down to 1fps
                 // function F() {
                 //   Box(boxesData.data[i]);
@@ -308,9 +461,11 @@ function updateComponents() {
                 //     });
                 //     Dummy();
                 // });
-                Dummy();
+                // Dummy();
+                testGC();
                 // DummyVg.update!(DummyData, undefined);
-            }
+                // f4();
+            // }
             // boxesData.data.forEach(Box);
         // });
     });
@@ -322,6 +477,8 @@ function animate() {
     if (needDraw) {
         boxesData.turn();
     }
+
+    odd = !odd;
 
     updateComponents();
 
@@ -339,8 +496,9 @@ animate();
     setStop: (s: boolean) => stop = s,
     // tslint:disable-next-line:object-literal-sort-keys
     doUpdate: updateComponents,
-    setBoxData(n: number) {
-        boxesData = new BoxesData(n);
+    setBoxData(count: number) {
+        boxesData = new BoxesData(count);
+        n = count;
     },
     draw() {
         renderer.render(scene, camera);
@@ -354,12 +512,12 @@ const benchmark = require("benchmark");
 const Benchmark = benchmark.runInContext({ _, process });
 (window as any).Benchmark = Benchmark;
 (window as any).doBenchmark = () => {
-    const n = 100000;
+    const count = 100000;
     const suite = Benchmark.Suite();
     needDraw = false;
-    boxesData = new BoxesData(n);
+    boxesData = new BoxesData(count);
     updateComponents();
-    const title = `update ${n} components`;
+    const title = `update ${count} components`;
     suite
         .add(title, updateComponents)
         .on("complete", function(this: any) {
