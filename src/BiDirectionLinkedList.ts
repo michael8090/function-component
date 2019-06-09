@@ -34,30 +34,45 @@ export class BiDirectionLinkedList<T extends BiDirectionLinkedListNode> {
     delete(node: T) {
         const p = node.bp;
         const next = node.bn;
+        const {head, tail} = this;
+        if (head === tail) {
+            if (node !== this.head) {
+                throw new Error('node is not inside the list');
+            }
+            this.head = this.tail = undefined;
+            return;
+        }
         if (this.head === node) {
             this.head = next;
+            return;
         }
         if (this.tail === node) {
             this.tail = p;
+            return;
         }
-        if (p !== undefined) {
-            p.bn = next;
-        }
-        if (next !== undefined) {
-            next.bp = p;
-        }
-        node.bp = undefined;
-        node.bn = undefined;
+        p!.bn = next;
+        next!.bp = p;
     }
 
     walk(cb: (value: T) => void) {
-        let head = this.head;
-        while(head !== undefined) {
-            const next = head.bn;
+        let {head} = this;
+        if (head === undefined) {
+            return;
+        }
+        const {tail} = this;
+        while(head !== tail) {
+            const next: BiDirectionLinkedListNode | undefined = head!.bn;
             // cb may delete `head.bn`
             // we take head as immutable when iterating
             cb(head as T);
             head = next;
+            if (head === undefined) {
+                // tslint:disable-next-line:no-debugger
+                debugger;
+            }
+        }
+        if (tail) {
+            cb(tail as T);
         }
     }
 }

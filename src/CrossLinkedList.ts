@@ -26,7 +26,7 @@ const CrossList = {
         if (preSibling === undefined) {
             parent.c = node;
         } else {
-            node.nS = preSibling.nS;
+            // node.nS = preSibling.nS;
             preSibling.nS = node;
         }
     },

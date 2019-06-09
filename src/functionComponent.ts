@@ -61,17 +61,19 @@ let isInRoot = false;
 // the variables shared inside a layer of a subtree
 let parentView: any | undefined;
 
-let parentInLastCallStack: StackNode | undefined;
+// let parentInLastCallStack: StackNode | undefined;
 let parentInCurrentCallStack: StackNode | undefined;
 
-let preSiblingInLastCallStack: StackNode | undefined;
+// let preSiblingInLastCallStack: StackNode | undefined;
 let preSiblingInCurrentCallStack: StackNode | undefined;
+
+let lastNode: StackNode | undefined;
 
 /**
  * 在当前层，上一个兄弟节点是否需要被回收
  * presibling 改变时，旧的值不会再被访问了，所以这时回收它是安全的
  */
-let preSiblingNeedToBeRecycled: boolean = false;
+// let preSiblingNeedToBeRecycled: boolean = false;
 // subtree layer variables definition end
 
 export function toFunctionComponent<TData extends any[], TView = {}>(vg: ViewGenerator<TData, TView>): (...data: TData) => void {
@@ -83,146 +85,162 @@ export function toFunctionComponent<TData extends any[], TView = {}>(vg: ViewGen
             );
         }
         const currentFn = functionComponent as IFunctionComponent<TData, TView>;
+        let currentNode: StackNode;
+
+        let lastFn: IFunctionComponent;
+        let lastNodeNextSibling: StackNode | undefined;
+        let lastNodeChild: StackNode | undefined;
+
+        if (lastNode !== undefined) {
+            lastFn = lastNode.f;
+            lastNodeNextSibling = lastNode.nS;
+            lastNodeChild = lastNode.c;
+
+            currentNode = lastNode;
+        } else {
+            currentNode = memoryPool.get();
+        }
 
         // create first, as memory pool will recycle lastNode latter
-        const currentNode: StackNode = memoryPool.get();
-        currentNode.c = undefined;
-        currentNode.nS = undefined;
-        // currentNode.u = false;
-        currentNode.v = undefined;
-        currentNode.f = currentFn;
-        currentNode.bn = undefined;
-        currentNode.bp = undefined;
+        // const currentNode: StackNode = memoryPool.get();
+        // currentNode.c = undefined;
+        // currentNode.nS = undefined;
+        // currentNode.v = undefined;
+        // currentNode.f = currentFn;
+  
 
-        currentList!.add(currentNode);
+        // let lastNode: StackNode | undefined;
+        // let lastNodeShouldBeRecycled = false;
 
-        let lastNode: StackNode | undefined;
-        let lastNodeShouldBeRecycled = false;
+        // let view: any;
+
+        let isLastNodeDestroyed = false;
+
+        if (lastFn! === currentFn) {
+            // update
+            if (vg.update !== undefined) {
+                const view = vg.update(data, lastNode!.v);
+                if (view !== currentNode.v) {
+                    currentNode.v = view;
+                }
+            }
+            //  else {
+            //     view = lastNode!.v;
+            // }
+            // mark the node is updated, so don't dispose the view when tearing down the tree
+            lastList!.delete(lastNode!);
+            // we should not recycle the node now, as we may need to visit the children and nextSiblings in the future
+            // we'll leave the siblings to do the job (or the parent)
+            // lastNodeShouldBeRecycled = true;
+        } else if (lastFn! === undefined) {
+            // create current view
+            if (vg.create !== undefined) {
+                currentNode.v = vg.create(data, parentView);
+            }
+            currentNode.f = currentFn;
+        } else {
+            // dispose last view and create current view
+            if (lastFn!.vg.dispose !== undefined) {
+                // if (parentInLastCallStack !== undefined) {
+                //     CrossList.remove(lastNode!, parentInLastCallStack, preSiblingInLastCallStack);
+                // }
+                CrossList.walk(lastNode!, removeFromLastListAndDispose);
+                // the node is completely gone and we'll take it never existed before
+                isLastNodeDestroyed = true;
+            }
+
+            // create current view
+            if (vg.create !== undefined) {
+                currentNode.v = vg.create(data, parentView);
+            }
+            currentNode.f = currentFn;
+        }
+        
+
+        // currentNode.v = view;
 
         if (currentCallStack !== undefined) {
             // navigating in the lastCallStack: if we already visited a node of last tree in the same layer, just visit the right node of the last visited node
-            if (preSiblingInLastCallStack !== undefined) {
-                lastNode = preSiblingInLastCallStack.nS;
-            } else {
-                // navigating in the lastCallStack: if it's the first time we visit the layer, we need to visit the first child of the layer parent
-                if (parentInLastCallStack !== undefined) {
-                    lastNode = parentInLastCallStack.c;
-                }
-            }
+            // if (preSiblingInLastCallStack !== undefined) {
+            //     lastNode = preSiblingInLastCallStack.nS;
+            // } else {
+            //     // navigating in the lastCallStack: if it's the first time we visit the layer, we need to visit the first child of the layer parent
+            //     if (parentInLastCallStack !== undefined) {
+            //         lastNode = parentInLastCallStack.c;
+            //     }
+            // }
 
             // add the currentNode to the currentCallStack
             CrossList.add(currentNode, parentInCurrentCallStack!, preSiblingInCurrentCallStack);
         } else {
             // navigating in the lastCallStack: if it's the first visit, just use the root of last tree
-            lastNode = lastCallStack;
+            // lastNode = lastCallStack;
 
             // create currentStack
             currentCallStack = currentNode;
         }
 
-        let lastFn: IFunctionComponent;
+        currentList!.add(currentNode);
 
-        if (lastNode !== undefined) {
-            lastFn = lastNode.f;
-        }
+        // if (lastNode !== undefined) {
+        //     // preSibling is about to move, we can recycle safely it now
+        //     // if (preSiblingNeedToBeRecycled === true) {
+        //     //     memoryPool.put(preSiblingInLastCallStack);
+        //     //     // no need to change it now
+        //     //     // preSiblingNeedToBeRecycled = false;
+        //     // }
 
-        let view: any;
+        //     // tell the next sibling call that the last visited sibling is me
+        //     // preSiblingInLastCallStack = lastNode;
+        //     // preSiblingNeedToBeRecycled = lastNodeShouldBeRecycled;
+        // }
 
-        if (lastFn! === currentFn) {
-            // update
-            if (vg.update !== undefined) {
-                view = vg.update(data, lastNode!.v);
-            } else {
-                view = lastNode!.v;
-            }
-            // mark the node is updated, so don't dispose the view when tearing down the tree
-            lastList!.delete(lastNode!);
-            // we should not recycle the node now, as we may need to visit the children and nextSiblings in the future
-            // we'll leave the siblings to do the job (or the parent)
-            lastNodeShouldBeRecycled = true;
-        } else if (lastFn! === undefined) {
-            // create current view
-            if (vg.create !== undefined) {
-                view = vg.create(data, parentView);
-            }
-        } else {
-            // dispose last view and create current view
-            if (lastFn!.vg.dispose !== undefined) {
-                if (parentInLastCallStack !== undefined) {
-                    CrossList.remove(lastNode!, parentInLastCallStack, preSiblingInLastCallStack);
-                }
-                CrossList.walk(lastNode!, removeFromLastListAndDispose);
-                // the node is completely gone and we'll take it never existed before
-                lastNode = undefined;
-            }
-
-            // create current view
-            if (vg.create !== undefined) {
-                view = vg.create(data, parentView);
-            }
-        }
-        
-
-        currentNode.v = view;
-
-        if (lastNode !== undefined) {
-            // preSibling is about to move, we can recycle safely it now
-            if (preSiblingNeedToBeRecycled === true) {
-                memoryPool.put(preSiblingInLastCallStack);
-                // no need to change it now
-                // preSiblingNeedToBeRecycled = false;
-            }
-
-            // tell the next sibling call that the last visited sibling is me
-            preSiblingInLastCallStack = lastNode;
-            preSiblingNeedToBeRecycled = lastNodeShouldBeRecycled;
-        }
-
+        /** set the layer variables */
         // tell the next sibling, the pre sibling is me
         preSiblingInCurrentCallStack = currentNode;
+        lastNode = lastNodeNextSibling;
+        /** done setting the layer variables */
 
         // done with the node, now for the children
 
         if (currentFn.vg.render !== undefined) {
             const parentViewBackup = parentView;
 
-            const parentInLastCallStackBackup = parentInLastCallStack;
-            const preSiblingInLastCallStackBackup = preSiblingInLastCallStack;
-            const preSiblingNeedToBeRecycledBackup = preSiblingNeedToBeRecycled;
+            // const parentInLastCallStackBackup = parentInLastCallStack;
+            // const preSiblingInLastCallStackBackup = preSiblingInLastCallStack;
+            // const preSiblingNeedToBeRecycledBackup = preSiblingNeedToBeRecycled;
     
             const parentInCurrentCallStackBackup = parentInCurrentCallStack;
             const preSiblingInCurrentCallStackBackup = preSiblingInCurrentCallStack;
+            const lastNodeBackup = lastNode;
     
-            parentInLastCallStack = lastNode;
-            preSiblingInLastCallStack = undefined;
-            preSiblingNeedToBeRecycled = false;
-    
-            parentInCurrentCallStack = currentNode;
-            preSiblingInCurrentCallStack = undefined;
-    
+            // parentInLastCallStack = lastNode;
+            // preSiblingInLastCallStack = undefined;
+            // preSiblingNeedToBeRecycled = false;
+
+            const view = currentNode.v;
             if (view !== undefined) {
                 parentView = view;
             }
+    
+            parentInCurrentCallStack = currentNode;
+            
+            preSiblingInCurrentCallStack = undefined;
 
+            if (isLastNodeDestroyed === true) {
+                lastNode = undefined;
+            } else {
+                lastNode = lastNodeChild;
+            }
+    
             // !!!children enter!!!
             currentFn.vg.render(data);
             // !!!children done!!!
 
-            if (preSiblingNeedToBeRecycled as boolean === true) {
-                // not child takes over it
-                // the parent (me) should do the job
-                memoryPool.put(preSiblingInLastCallStack);
-            }
-
             parentView = parentViewBackup;
-
-            parentInLastCallStack = parentInLastCallStackBackup;
-            preSiblingInLastCallStack = preSiblingInLastCallStackBackup;
-            preSiblingNeedToBeRecycled = preSiblingNeedToBeRecycledBackup;
-
-    
             parentInCurrentCallStack = parentInCurrentCallStackBackup;
             preSiblingInCurrentCallStack = preSiblingInCurrentCallStackBackup;
+            lastNode = lastNodeBackup;
         }
     }
 
@@ -246,10 +264,11 @@ export function getRoot<T>(rootView: T) {
 
     return function Root(child: Function) {
         lastCallStack = cachedLastStack;
+        lastNode = lastCallStack;
         lastList = cachedLastList;
-        parentInLastCallStack = undefined;
-        preSiblingInLastCallStack = undefined;
-        preSiblingNeedToBeRecycled = false;
+        // parentInLastCallStack = undefined;
+        // preSiblingInLastCallStack = undefined;
+        // preSiblingNeedToBeRecycled = false;
 
         currentCallStack = cachedCurrentStack;
         currentList = cachedCurrentList;
@@ -265,11 +284,11 @@ export function getRoot<T>(rootView: T) {
         child();
         isInRoot = false;
 
-        if (preSiblingNeedToBeRecycled as boolean === true) {
-            // not child takes over it
-            // the parent (me) should do the job
-            memoryPool.put(preSiblingInLastCallStack);
-        }
+        // if (preSiblingNeedToBeRecycled as boolean === true) {
+        //     // not child takes over it
+        //     // the parent (me) should do the job
+        //     memoryPool.put(preSiblingInLastCallStack);
+        // }
 
         lastList.walk(disposeNode);
                 
