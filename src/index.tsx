@@ -270,7 +270,7 @@ function UpdateBoxes() {
         //   });
         // });
 
-        const data = boxesData.data[i];
+        // const data = boxesData.data[i];
 
         // Group(() => {
         //     Group(() => {
@@ -279,7 +279,7 @@ function UpdateBoxes() {
         // });
 
         // fastest, 10000 boxes at stable 17fps
-        Box(data);
+        // Box(data);
 
         // nested
         // Box(data, undefined, () => {
@@ -301,6 +301,7 @@ function UpdateBoxes() {
         //     });
         //     Dummy();
         // });
+        Dummy();
     }
     // boxesData.data.forEach(Box);
 }
