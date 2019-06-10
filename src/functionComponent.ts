@@ -96,12 +96,13 @@ let context: Context | undefined;
 export function toFunctionComponent<TData extends any[], TView = {}>(vg: ViewGenerator<TData, TView>): (...data: TData) => void {
     function functionComponent() {
         const data = arguments as any as TData;
-        if (context === undefined) {
+        // avoid accessing closure
+        const currentContext = context;
+        if (currentContext === undefined) {
             throw new Error(
                 `A function component should be wrapped inside a Root (use getRoot())`
             );
         }
-        const currentContext = context;
         const currentFn = functionComponent as IFunctionComponent<TData, TView>;
         let currentNode: StackNode;
 
