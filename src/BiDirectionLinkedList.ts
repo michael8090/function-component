@@ -42,11 +42,11 @@ export class BiDirectionLinkedList<T extends BiDirectionLinkedListNode> {
             this.head = this.tail = undefined;
             return;
         }
-        if (this.head === node) {
+        if (head === node) {
             this.head = next;
             return;
         }
-        if (this.tail === node) {
+        if (tail === node) {
             this.tail = p;
             return;
         }
