@@ -42,11 +42,11 @@ function disposeNode(node: StackNode) {
     // node.nS = undefined;
     // node.u = false;
     // node.v = undefined;
-    context!.mP.put(node);
+    context!.memoryPool.put(node);
 }
 
 function removeFromLastListAndDispose(node: StackNode) {
-    context!.lL!.delete(node);
+    context!.lastList!.delete(node);
     disposeNode(node);
 }
 
@@ -55,46 +55,46 @@ interface Context {
     /**
      * lastCallStack
      */
-    lCS: StackNode | undefined;
+    lastCallStack: StackNode | undefined;
     /**
      * lastList
      */
-    lL: BiDirectionLinkedList<StackNode>;
+    lastList: BiDirectionLinkedList<StackNode>;
     /**
      * currentCallStack
      */
-    cCS: StackNode | undefined;
+    currentCallStack: StackNode | undefined;
     /**
      * currentList
      */
-    cL: BiDirectionLinkedList<StackNode>;
+    currentList: BiDirectionLinkedList<StackNode>;
 
     /**
      * memoryPool
      */
-    mP: MemoryPool;
+    memoryPool: MemoryPool;
     // root variables definition end
 
     // the variables shared inside a layer of a subtree
     /**
      * parentView
      */
-    pV: any | undefined;
+    parentView: any | undefined;
 
     /**
      * parentInCurrentCallStack
      */
-    pC: StackNode | undefined;
+    parentInCurrentCallStack: StackNode | undefined;
 
     /**
      * preSiblingInCurrentCallStack
      */
-    psC: StackNode | undefined;
+    preSiblingInCurrentCallStack: StackNode | undefined;
 
     /**
      * lastNode
      */
-    lN: StackNode | undefined;
+    lastNode: StackNode | undefined;
     // subtree layer variables definition end
 }
 
@@ -139,7 +139,7 @@ export function toFunctionComponent<TData extends any[], TView = {}>(vg: ViewGen
         let lastNodeNextSibling: StackNode | undefined;
         let lastNodeChild: StackNode | undefined;
 
-        const {lN: lastNode} = currentContext;
+        const {lastNode: lastNode} = currentContext;
         if (lastNode !== undefined) {
             lastFn = lastNode.f;
             lastNodeNextSibling = lastNode.nS;
@@ -147,7 +147,7 @@ export function toFunctionComponent<TData extends any[], TView = {}>(vg: ViewGen
 
             currentNode = lastNode;
         } else {
-            currentNode = currentContext.mP.get();
+            currentNode = currentContext.memoryPool.get();
         }
 
         let isLastNodeDestroyed = false;
@@ -161,11 +161,11 @@ export function toFunctionComponent<TData extends any[], TView = {}>(vg: ViewGen
                 }
             }
             // mark the node is updated, so don't dispose the view when tearing down the tree
-            currentContext.lL!.delete(lastNode!);
+            currentContext.lastList!.delete(lastNode!);
         } else if (lastFn! === undefined) {
             // create current view
             if (create !== undefined) {
-                currentNode.v = create(data, currentContext.pV);
+                currentNode.v = create(data, currentContext.parentView);
             }
             currentNode.f = currentFn;
         } else {
@@ -178,62 +178,62 @@ export function toFunctionComponent<TData extends any[], TView = {}>(vg: ViewGen
 
             // create current view
             if (create !== undefined) {
-                currentNode.v = create(data, currentContext.pV);
+                currentNode.v = create(data, currentContext.parentView);
             }
             currentNode.f = currentFn;
         }
         
-        if (currentContext.cCS !== undefined) {
+        if (currentContext.currentCallStack !== undefined) {
             // add the currentNode to the currentCallStack
-            addCrossListNode(currentNode, currentContext.pC!, currentContext.psC);
+            addCrossListNode(currentNode, currentContext.parentInCurrentCallStack!, currentContext.preSiblingInCurrentCallStack);
         } else {
             // create currentStack
-            currentContext.cCS = currentNode;
+            currentContext.currentCallStack = currentNode;
         }
 
-        currentContext.cL!.add(currentNode);
+        currentContext.currentList!.add(currentNode);
 
         /** set the layer variables */
         // tell the next sibling, the pre sibling is me
-        currentContext.psC = currentNode;
-        currentContext.lN = lastNodeNextSibling;
+        currentContext.preSiblingInCurrentCallStack = currentNode;
+        currentContext.lastNode = lastNodeNextSibling;
         /** done setting the layer variables */
 
         // done with the node, now for the children
 
         if (render !== undefined) {
-            const parentViewBackup = currentContext.pV;
-            const parentInCurrentCallStackBackup = currentContext.pC;
-            const preSiblingInCurrentCallStackBackup = currentContext.psC;
-            const lastNodeBackup = currentContext.lN;
+            const parentViewBackup = currentContext.parentView;
+            const parentInCurrentCallStackBackup = currentContext.parentInCurrentCallStack;
+            const preSiblingInCurrentCallStackBackup = currentContext.preSiblingInCurrentCallStack;
+            const lastNodeBackup = currentContext.lastNode;
     
             const view = currentNode.v;
             if (view !== undefined) {
-                currentContext.pV = view;
+                currentContext.parentView = view;
             }
     
-            currentContext.pC = currentNode;
+            currentContext.parentInCurrentCallStack = currentNode;
             
-            currentContext.psC = undefined;
+            currentContext.preSiblingInCurrentCallStack = undefined;
 
             if (isLastNodeDestroyed === true) {
-                currentContext.lN = undefined;
+                currentContext.lastNode = undefined;
             } else {
-                currentContext.lN = lastNodeChild;
+                currentContext.lastNode = lastNodeChild;
             }
     
             // !!!children enter!!!
             render(data);
             // !!!children done!!!
             
-            if (currentContext.psC !== undefined) {
-                currentContext.psC!.nS = undefined;
+            if (currentContext.preSiblingInCurrentCallStack !== undefined) {
+                currentContext.preSiblingInCurrentCallStack!.nS = undefined;
             }
 
-            currentContext.pV = parentViewBackup;
-            currentContext.pC = parentInCurrentCallStackBackup;
-            currentContext.psC = preSiblingInCurrentCallStackBackup;
-            currentContext.lN = lastNodeBackup;
+            currentContext.parentView = parentViewBackup;
+            currentContext.parentInCurrentCallStack = parentInCurrentCallStackBackup;
+            currentContext.preSiblingInCurrentCallStack = preSiblingInCurrentCallStackBackup;
+            currentContext.lastNode = lastNodeBackup;
         } else {
             currentNode.c = undefined;
         }
@@ -258,24 +258,24 @@ export function getRoot<T>(rootView: T) {
     const cachedMemoryPool = new MemoryPool(createStackNode);
 
     const cachedContext: Context = {
-        lCS: undefined,
-        lL: new BiDirectionLinkedList<StackNode>(),
-        cCS: undefined,
-        cL: new BiDirectionLinkedList<StackNode>(),
+        lastCallStack: undefined,
+        lastList: new BiDirectionLinkedList<StackNode>(),
+        currentCallStack: undefined,
+        currentList: new BiDirectionLinkedList<StackNode>(),
     
-        mP: new MemoryPool(createStackNode),
+        memoryPool: new MemoryPool(createStackNode),
     
         // isInRoot: false,
         // root variables definition end
     
         // the variables shared inside a layer of a subtree
-        pV: undefined,
+        parentView: undefined,
     
-        pC: undefined,
+        parentInCurrentCallStack: undefined,
     
-        psC: undefined,
+        preSiblingInCurrentCallStack: undefined,
     
-        lN: undefined,
+        lastNode: undefined,
     }
 
     return function Root(child: Function) {
@@ -293,20 +293,20 @@ export function getRoot<T>(rootView: T) {
 
         // memoryPool = cachedMemoryPool;
         
-        cachedContext.lN = cachedContext.lCS;
-        cachedContext.pC = undefined;
-        cachedContext.psC = undefined;
-        cachedContext.pV = rootView;
+        cachedContext.lastNode = cachedContext.lastCallStack;
+        cachedContext.parentInCurrentCallStack = undefined;
+        cachedContext.preSiblingInCurrentCallStack = undefined;
+        cachedContext.parentView = rootView;
 
         context = cachedContext;
 
         child();
         
-        if (cachedContext.psC !== undefined) {
-            cachedContext.psC!.nS = undefined;
+        if (cachedContext.preSiblingInCurrentCallStack !== undefined) {
+            cachedContext.preSiblingInCurrentCallStack!.nS = undefined;
         }
 
-        cachedContext.lL.walk(disposeNode);
+        cachedContext.lastList.walk(disposeNode);
 
         context = undefined;
                 
@@ -316,13 +316,13 @@ export function getRoot<T>(rootView: T) {
         // cachedCurrentStack = lastCallStack;
         // cachedLastStack = currentCallStack;
 
-        cachedContext.lCS = cachedContext.cCS;
-        cachedContext.cCS = undefined;
+        cachedContext.lastCallStack = cachedContext.currentCallStack;
+        cachedContext.currentCallStack = undefined;
         
         // swap the two list
-        const lastList = cachedContext.lL;
-        cachedContext.lL = cachedContext.cL;
-        cachedContext.cL = lastList;
-        cachedContext.cL.reset();
+        const lastList = cachedContext.lastList;
+        cachedContext.lastList = cachedContext.currentList;
+        cachedContext.currentList = lastList;
+        cachedContext.currentList.reset();
     };
 }

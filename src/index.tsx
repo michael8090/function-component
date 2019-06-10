@@ -65,7 +65,7 @@ const MeshGroupFunctionComponent = toFunctionComponent<[Function?], MeshView>({
         }
     },
     render([data]) {
-        if (data) {
+        if (data !== undefined) {
             data();
         }
     }
@@ -217,7 +217,7 @@ const Dummy = toFunctionComponent<[Function?], undefined>({
         //
     },
     render([child]) {
-        if (child) {
+        if (child !== undefined) {
             child();
         }
     }
@@ -302,6 +302,7 @@ function UpdateBoxes() {
         //     Dummy();
         // });
         Dummy();
+        // noop();
     }
     // boxesData.data.forEach(Box);
 }
