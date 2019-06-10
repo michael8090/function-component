@@ -289,12 +289,10 @@ export function getRoot<T>(rootView: T) {
         isInRoot = true;
         child();
         isInRoot = false;
-
-        // if (preSiblingNeedToBeRecycled as boolean === true) {
-        //     // not child takes over it
-        //     // the parent (me) should do the job
-        //     memoryPool.put(preSiblingInLastCallStack);
-        // }
+        
+        if (preSiblingInCurrentCallStack !== undefined) {
+            preSiblingInCurrentCallStack!.nS = undefined;
+        }
 
         lastList.walk(disposeNode);
                 
