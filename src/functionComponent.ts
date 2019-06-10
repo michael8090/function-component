@@ -52,23 +52,48 @@ function removeFromLastListAndDispose(node: StackNode) {
 
 interface Context {
     // the variables shared by all function calls of a root
+    /**
+     * lastCallStack
+     */
     lastCallStack: StackNode | undefined;
+    /**
+     * lastList
+     */
     lastList: BiDirectionLinkedList<StackNode>;
+    /**
+     * currentCallStack
+     */
     currentCallStack: StackNode | undefined;
+    /**
+     * currentList
+     */
     currentList: BiDirectionLinkedList<StackNode>;
 
+    /**
+     * memoryPool
+     */
     memoryPool: MemoryPool;
-
-    // isInRoot: boolean;
     // root variables definition end
 
     // the variables shared inside a layer of a subtree
+    /**
+     * parentView
+     */
     parentView: any | undefined;
 
+    /**
+     * parentInCurrentCallStack
+     */
     parentInCurrentCallStack: StackNode | undefined;
 
+    /**
+     * preSiblingInCurrentCallStack
+     */
     preSiblingInCurrentCallStack: StackNode | undefined;
 
+    /**
+     * lastNode
+     */
     lastNode: StackNode | undefined;
     // subtree layer variables definition end
 }
