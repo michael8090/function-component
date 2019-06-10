@@ -47,6 +47,7 @@ function disposeNode(node: StackNode) {
 
 function removeFromLastListAndDispose(node: StackNode) {
     context!.lastList!.delete(node);
+    node.v = undefined;
     disposeNode(node);
 }
 
