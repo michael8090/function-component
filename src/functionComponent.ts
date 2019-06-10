@@ -100,27 +100,6 @@ interface Context {
 
 let context: Context | undefined;
 
-// // the variables shared by all function calls of a root
-// let lastCallStack: StackNode | undefined;
-// let lastList: BiDirectionLinkedList<StackNode> | undefined;
-// let currentCallStack: StackNode | undefined;
-// let currentList: BiDirectionLinkedList<StackNode> | undefined;
-
-// let memoryPool: MemoryPool;
-
-// let isInRoot = false;
-// // root variables definition end
-
-// // the variables shared inside a layer of a subtree
-// let parentView: any | undefined;
-
-// let parentInCurrentCallStack: StackNode | undefined;
-
-// let preSiblingInCurrentCallStack: StackNode | undefined;
-
-// let lastNode: StackNode | undefined;
-// // subtree layer variables definition end
-
 export function toFunctionComponent<TData extends any[], TView = {}>(vg: ViewGenerator<TData, TView>): (...data: TData) => void {
     const {create, update, render} = vg;
     function functionComponent() {
@@ -251,10 +230,6 @@ function createStackNode() {
 }
 
 export function getRoot<T>(rootView: T) {
-    // let cachedLastStack: StackNode | undefined;
-    // let cachedLastList = new BiDirectionLinkedList<StackNode>();
-    // let cachedCurrentStack: StackNode | undefined;
-    // let cachedCurrentList = new BiDirectionLinkedList<StackNode>();
     const cachedMemoryPool = new MemoryPool(createStackNode);
 
     const cachedContext: Context = {
@@ -265,7 +240,6 @@ export function getRoot<T>(rootView: T) {
     
         memoryPool: new MemoryPool(createStackNode),
     
-        // isInRoot: false,
         // root variables definition end
     
         // the variables shared inside a layer of a subtree
@@ -279,20 +253,6 @@ export function getRoot<T>(rootView: T) {
     }
 
     return function Root(child: Function) {
-        // lastCallStack = cachedLastStack;
-        // lastNode = lastCallStack;
-        // lastList = cachedLastList;
-
-        // currentCallStack = cachedCurrentStack;
-        // currentList = cachedCurrentList;
-        // currentList.reset();
-        // parentInCurrentCallStack = undefined;
-        // preSiblingInCurrentCallStack = undefined;
-
-        // parentView = rootView;
-
-        // memoryPool = cachedMemoryPool;
-        
         cachedContext.lastNode = cachedContext.lastCallStack;
         cachedContext.parentInCurrentCallStack = undefined;
         cachedContext.preSiblingInCurrentCallStack = undefined;
@@ -309,12 +269,6 @@ export function getRoot<T>(rootView: T) {
         cachedContext.lastList.walk(disposeNode);
 
         context = undefined;
-                
-        // lastCallStack = undefined;
-
-        // swap the two list
-        // cachedCurrentStack = lastCallStack;
-        // cachedLastStack = currentCallStack;
 
         cachedContext.lastCallStack = cachedContext.currentCallStack;
         cachedContext.currentCallStack = undefined;
