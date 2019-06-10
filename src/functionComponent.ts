@@ -5,6 +5,9 @@ import { MemoryPool } from './MemoryPool';
 // accessing a Module Symbol has overhead
 const CrossList = CL;
 
+const addCrossListNode = CrossList.add;
+const walkCrossListNode = CrossList.walk;
+
 export interface ViewGenerator<TData extends any[] = any[], TView = {}> {
     create?(data: TData, parent: TView): TView | undefined;
     update?(data: TData, view: TView): TView | undefined;
@@ -142,7 +145,7 @@ export function toFunctionComponent<TData extends any[], TView = {}>(vg: ViewGen
         } else {
             // dispose last view and create current view
             if (lastFn!.vg.dispose !== undefined) {
-                CrossList.walk(lastNode!, removeFromLastListAndDispose);
+                walkCrossListNode(lastNode!, removeFromLastListAndDispose);
                 // the node is completely gone and we'll take it never existed before
                 isLastNodeDestroyed = true;
             }
@@ -156,7 +159,7 @@ export function toFunctionComponent<TData extends any[], TView = {}>(vg: ViewGen
         
         if (currentContext.currentCallStack !== undefined) {
             // add the currentNode to the currentCallStack
-            CrossList.add(currentNode, currentContext.parentInCurrentCallStack!, currentContext.preSiblingInCurrentCallStack);
+            addCrossListNode(currentNode, currentContext.parentInCurrentCallStack!, currentContext.preSiblingInCurrentCallStack);
         } else {
             // create currentStack
             currentContext.currentCallStack = currentNode;
