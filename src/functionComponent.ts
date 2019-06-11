@@ -1,4 +1,4 @@
-import { BiDirectionLinkedList, BiDirectionLinkedListNode } from './BiDirectionLinkedList';
+// import { BiDirectionLinkedList, BiDirectionLinkedListNode } from './BiDirectionLinkedList';
 import { CrossList as CL, CrossListNode } from './CrossLinkedList';
 import { MemoryPool } from './MemoryPool';
 
@@ -27,7 +27,7 @@ interface IFunctionComponent<TData extends any[] = any[], TView = {}> {
     Cls: ConstructorOf<Component<TData, TView>>;
 }
 
-interface StackNode extends CrossListNode, BiDirectionLinkedListNode {
+interface StackNode extends CrossListNode {
     f: IFunctionComponent;
     /**
      * isUpdated
@@ -189,6 +189,8 @@ export function toFunctionComponent<TData extends any[], TView = {}>(vg: Constru
             }
             currentNode.i = instance;
             currentNode.f = currentFn;
+            currentNode.nS = undefined;
+            currentNode.c = undefined;
 
             if (currentContext.parentInCurrentCallStack !== undefined) {
                 // add the currentNode to the currentCallStack
@@ -267,6 +269,12 @@ function createStackNode() {
     });
 }
 
+const Root = toFunctionComponent(class extends Component<[Function]> {
+    render([child]: [Function]) {
+        child();
+    }
+})
+
 export function getRoot<T>(rootView: T) {
     const cachedMemoryPool = new MemoryPool(createStackNode);
 
@@ -290,7 +298,7 @@ export function getRoot<T>(rootView: T) {
         lastNode: undefined,
     }
 
-    return function Root(child: Function) {
+    return function (child: Function) {
         cachedContext.lastNode = cachedContext.lastCallStack;
         cachedContext.parentInCurrentCallStack = undefined;
         cachedContext.preSiblingInCurrentCallStack = undefined;
@@ -298,19 +306,19 @@ export function getRoot<T>(rootView: T) {
 
         context = cachedContext;
 
-        child();
+        Root(child);
         
-        const preSiblingInCurrentCallStack = cachedContext.preSiblingInCurrentCallStack as StackNode | undefined;
-        if (preSiblingInCurrentCallStack !== undefined) {
-            const nodeToBeDisposed = preSiblingInCurrentCallStack.nS;
-            if (nodeToBeDisposed !== undefined) {
-                walkCrossListNode(nodeToBeDisposed, disposeNode);
-                preSiblingInCurrentCallStack.nS = undefined;
-            }
-        } else if (cachedContext.lastCallStack !== undefined) {
-            walkCrossListNode(cachedContext.lastCallStack, disposeNode);
-            cachedContext.lastCallStack = undefined;
-        }
+        // const preSiblingInCurrentCallStack = cachedContext.preSiblingInCurrentCallStack as StackNode | undefined;
+        // if (preSiblingInCurrentCallStack !== undefined) {
+        //     const nodeToBeDisposed = preSiblingInCurrentCallStack.nS;
+        //     if (nodeToBeDisposed !== undefined) {
+        //         walkCrossListNode(nodeToBeDisposed, disposeNode);
+        //         preSiblingInCurrentCallStack.nS = undefined;
+        //     }
+        // } else if (cachedContext.lastCallStack !== undefined) {
+        //     walkCrossListNode(cachedContext.lastCallStack, disposeNode);
+        //     cachedContext.lastCallStack = undefined;
+        // }
 
         // cachedContext.lastList.walk(disposeNode);
 
