@@ -1,7 +1,7 @@
 import * as _ from "lodash";
 import * as process from "process";
 import * as THREE from "three";
-import {getRoot, toFunctionComponent,} from './functionComponent';
+import {Component, getRoot, toFunctionComponent,} from './functionComponent';
 import { View } from "./view";
 
 class BoxesData {
@@ -48,23 +48,24 @@ class MeshView extends View {
     }
 }
 
-const MeshGroupFunctionComponent = toFunctionComponent<[Function?], MeshView>({
-    create(data, parent) {
+const MeshGroupFunctionComponent = toFunctionComponent<[Function?], MeshView>(class extends Component<[Function?], MeshView> {
+    componentWillMount(data: [Function?], parent: MeshView) {
         const view = new MeshView(new THREE.Object3D());
         if (parent) {
             parent.add(view);
         }
-        return view;
-    },
+        this.view = view;
+    }
     // update(data, view) {
     //   return view;
     // },
-    dispose(view) {
-        if (view) {
+    componentWillUnmount() {
+        const {view} = this;
+        if (view !== undefined) {
             view.dispose();
         }
-    },
-    render([data]) {
+    }
+    render([data]: [Function?]) {
         if (data !== undefined) {
             data();
         }
@@ -75,7 +76,7 @@ const MeshGroup = function(child: Function | undefined) {
     MeshGroupFunctionComponent(child);
 };
 
-const Group = toFunctionComponent({
+const Group = toFunctionComponent(class extends Component<[Function?], MeshView> {
     render(child: [Function?]) {
         const c = child[0];
         if (c) {
@@ -110,8 +111,9 @@ function updateStyle(mesh: THREE.Mesh, data: BoxData, config?: {scale?: number, 
     }
 }
 
-const Box = toFunctionComponent<[BoxData, {scale?: number, color?: number}?, Function?], MeshView>({
-    create([data, config], parent) {
+type Props = [BoxData, {scale?: number, color?: number}?, Function?];
+const Box = toFunctionComponent(class extends Component<Props, MeshView> {
+    componentWillMount([data, config]: Props, parent: MeshView) {
         const geometry = new THREE.BoxGeometry(1, 1, 1);
 
         const material = new THREE.MeshBasicMaterial( { 
@@ -128,19 +130,17 @@ const Box = toFunctionComponent<[BoxData, {scale?: number, color?: number}?, Fun
         if (parent) {
             parent.add(view);
         }
-        return view;
-    },
-    update([data, config], view) {
+        this.view = view;
+    }
+    componentWillUpdate([data, config]: Props) {
         if (needDraw) {
-            const mesh = (view as MeshView).mesh;
+            const mesh = this.view!.mesh;
             updateStyle(mesh as THREE.Mesh, data, config);
         }
-        return view;
-    },
-    dispose(view) {
-        if (view) {
-            // todo: too many "as" here
-            const mesh = (view as MeshView).mesh as THREE.Mesh;
+    }
+    componentWillUnmount() {
+            const {view} = this;
+            const mesh = view!.mesh as THREE.Mesh;
             if (mesh.parent) {
                 mesh.parent.remove(mesh);
             }
@@ -152,10 +152,9 @@ const Box = toFunctionComponent<[BoxData, {scale?: number, color?: number}?, Fun
                 // tslint:disable-next-line:no-console
                 console.warn("not supported multi materials");
             }
-            view.dispose();
-        }
-    },
-    render([data, config, child]) {
+            view!.dispose();
+    }
+    render([data, config, child]: Props) {
         if (child) {
             child();
         }
@@ -206,17 +205,17 @@ function noop(a?: any) {
     //
 }
 
-const Dummy = toFunctionComponent<[Function?], undefined>({
-    create(args) {
-        return undefined;
-    },
-    update(args, view) {
-        return view;
-    },
-    dispose(view) {
+const Dummy = toFunctionComponent(class extends Component<[Function?], undefined> {
+    componentWillMount() {
         //
-    },
-    render([child]) {
+    }
+    componentWillUpdate(args: [Function?]) {
+        //
+    }
+    componentWillUnmount() {
+        //
+    }
+    render([child]: [Function?]) {
         if (child !== undefined) {
             child();
         }
@@ -270,7 +269,7 @@ function UpdateBoxes() {
         //   });
         // });
 
-        const data = boxesData.data[i];
+        // const data = boxesData.data[i];
 
         // Group(() => {
         //     Group(() => {
@@ -279,7 +278,7 @@ function UpdateBoxes() {
         // });
 
         // fastest, 10000 boxes at stable 17fps
-        Box(data);
+        // Box(data);
 
         // nested
         // Box(data, undefined, () => {
@@ -301,7 +300,7 @@ function UpdateBoxes() {
         //     });
         //     Dummy();
         // });
-        // Dummy();
+        Dummy();
         // noop();
     }
     // boxesData.data.forEach(Box);
