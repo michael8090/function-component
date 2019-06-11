@@ -136,6 +136,7 @@ export function toFunctionComponent<TData extends any[], TView = {}>(vg: Constru
 
         if (isCreate === true) {
             // create current view
+            // todo: if use currentCls, 3.2ms to 4.8ms
             const instance = new Cls(data);
             if (instance.componentWillMount !== undefined) {
                 instance.componentWillMount(data, currentContext.parentView);
