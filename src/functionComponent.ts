@@ -115,6 +115,10 @@ export function toFunctionComponent<TData extends any[], TView = {}>(vg: Constru
                 instance!.componentWillUpdate(data);
             }
         } else if (lastCls! === undefined) {
+            if (currentContext.lastCallStack === undefined) {
+                // create currentStack
+                currentContext.lastCallStack = currentNode;
+            }
             isCreate = true;
         } else {
             // dispose last view and create current view
@@ -128,11 +132,6 @@ export function toFunctionComponent<TData extends any[], TView = {}>(vg: Constru
 
 
             isCreate = true;
-        }
-
-        if (currentContext.lastCallStack === undefined) {
-            // create currentStack
-            currentContext.lastCallStack = currentNode;
         }
 
         if (isCreate === true) {
