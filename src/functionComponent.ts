@@ -18,16 +18,8 @@ export class Component<TData extends any[] = any[], TView = {}> {
     render?(data: TData): void;
 }
 
-interface IFunctionComponent<TData extends any[] = any[], TView = {}> {
-    (...data: TData): void;
-    /**
-     * component class
-     */
-    Cls: ConstructorOf<Component<TData, TView>>;
-}
-
 interface StackNode extends CrossListNode {
-    f: IFunctionComponent;
+    C: ConstructorOf<Component<any, any>>;
     /**
      * component instance
      */
@@ -89,7 +81,7 @@ let context: Context | undefined;
 export function toFunctionComponent<TData extends any[], TView = {}>(vg: ConstructorOf<Component<TData, TView>>): (...data: TData) => void {
     // const {componentWillMount: componentWillMount, componentWillUpdate: componentWillUpdate, render} = vg;
     const Cls = vg;
-    function functionComponent() {
+    return function functionComponent() {
         const data = arguments as any as TData;
         // avoid accessing closure
         const currentContext = context;
@@ -98,15 +90,15 @@ export function toFunctionComponent<TData extends any[], TView = {}>(vg: Constru
                 `A function component should be wrapped inside a Root (use getRoot())`
             );
         }
-        const currentFn = functionComponent as IFunctionComponent<TData, TView>;
+        const currentCls = Cls;
         let currentNode: StackNode;
 
-        let lastFn: IFunctionComponent;
+        let lastCls: ConstructorOf<Component<any, any>>;
         let lastNodeNextSibling: StackNode | undefined;
 
         const {lastNode} = currentContext;
         if (lastNode !== undefined) {
-            lastFn = lastNode.f;
+            lastCls = lastNode.C;
             lastNodeNextSibling = lastNode.nS;
 
             currentNode = lastNode;
@@ -114,16 +106,15 @@ export function toFunctionComponent<TData extends any[], TView = {}>(vg: Constru
             currentNode = currentContext.memoryPool.get();
         }
 
-        // let isLastNodeDestroyed = false;
         let isCreate = false;
 
-        if (lastFn! === currentFn) {
+        if (lastCls! === currentCls) {
             // update
             const instance = currentNode.i;
             if (instance!.componentWillUpdate !== undefined) {
                 instance!.componentWillUpdate(data);
             }
-        } else if (lastFn! === undefined) {
+        } else if (lastCls! === undefined) {
             isCreate = true;
         } else {
             // dispose last view and create current view
@@ -151,7 +142,7 @@ export function toFunctionComponent<TData extends any[], TView = {}>(vg: Constru
                 instance.componentWillMount(data, currentContext.parentView);
             }
             currentNode.i = instance;
-            currentNode.f = currentFn;
+            currentNode.C = currentCls;
             currentNode.nS = undefined;
             currentNode.c = undefined;
 
@@ -215,10 +206,6 @@ export function toFunctionComponent<TData extends any[], TView = {}>(vg: Constru
             currentContext.lastNode = lastNodeBackup;
         }
     }
-
-    const f = functionComponent as IFunctionComponent<TData, TView>;
-    f.Cls = Cls;
-    return f;
 }
 
 function createStackNode() {
@@ -237,11 +224,9 @@ export function getRoot<T>(rootView: T) {
     const cachedMemoryPool = new MemoryPool(createStackNode);
 
     const cachedContext: Context = {
+        // the variables shared by all function calls of a root
+
         lastCallStack: undefined,
-        // lastList: new BiDirectionLinkedList<StackNode>(),
-        // currentCallStack: undefined,
-        // currentList: new BiDirectionLinkedList<StackNode>(),
-    
         memoryPool: new MemoryPool(createStackNode),
     
         // root variables definition end
@@ -265,30 +250,7 @@ export function getRoot<T>(rootView: T) {
         context = cachedContext;
 
         Root(child);
-        
-        // const preSiblingInCurrentCallStack = cachedContext.preSiblingInCurrentCallStack as StackNode | undefined;
-        // if (preSiblingInCurrentCallStack !== undefined) {
-        //     const nodeToBeDisposed = preSiblingInCurrentCallStack.nS;
-        //     if (nodeToBeDisposed !== undefined) {
-        //         walkCrossListNode(nodeToBeDisposed, disposeNode);
-        //         preSiblingInCurrentCallStack.nS = undefined;
-        //     }
-        // } else if (cachedContext.lastCallStack !== undefined) {
-        //     walkCrossListNode(cachedContext.lastCallStack, disposeNode);
-        //     cachedContext.lastCallStack = undefined;
-        // }
-
-        // cachedContext.lastList.walk(disposeNode);
 
         context = undefined;
-
-        // cachedContext.lastCallStack = cachedContext.currentCallStack;
-        // cachedContext.currentCallStack = undefined;
-        
-        // swap the two list
-        // const lastList = cachedContext.lastList;
-        // cachedContext.lastList = cachedContext.currentList;
-        // cachedContext.currentList = lastList;
-        // cachedContext.currentList.reset();
     };
 }
