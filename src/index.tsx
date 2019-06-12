@@ -300,7 +300,7 @@ function UpdateBoxes() {
         //     });
         //     Dummy();
         // });
-        Dummy();
+        Dummy(Dummy);
         // noop();
     }
     // boxesData.data.forEach(Box);
