@@ -76,15 +76,6 @@ const MeshGroup = function(child: Function | undefined) {
     MeshGroupFunctionComponent(child);
 };
 
-const Group = toFunctionComponent(class extends Component<[Function?], MeshView> {
-    render(child: [Function?]) {
-        const c = child[0];
-        if (c) {
-            c();
-        }
-    }
-});
-
 let needDraw = true;
 const toggle = document.createElement("input");
 toggle.type = "checkbox";
