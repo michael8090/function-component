@@ -1,8 +1,10 @@
 import * as _ from "lodash";
 import * as process from "process";
 import * as THREE from "three";
-import {Component, getRoot, toFunctionComponent,} from './functionComponent';
+import {Component, Components, getRoot, toFunctionComponent} from './functionComponent';
 import { View } from "./view";
+
+const {MapItems} = Components;
 
 class BoxesData {
     public data: BoxData[];
@@ -297,8 +299,14 @@ function UpdateBoxes() {
     // boxesData.data.forEach(Box);
 }
 
+function UpdateBoxesWithMapItems() {
+    MapItems(boxesData.data, (box, i) => i, box => {
+        Box(box);
+    });
+}
+
 function MeshGroupWithBoxes() {
-    MeshGroup(UpdateBoxes);
+    MeshGroup(UpdateBoxesWithMapItems);
 }
 
 function updateComponents() {

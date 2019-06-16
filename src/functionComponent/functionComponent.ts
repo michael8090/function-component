@@ -78,7 +78,8 @@ interface Context {
 
 let context: Context | undefined;
 
-export function toFunctionComponent<TData extends any[], TView = {}>(vg: ConstructorOf<Component<TData, TView>>): (...data: TData) => void {
+export function toFunctionComponent<TData extends any[], TView = {}>
+    (vg: ConstructorOf<Component<TData, TView>>): (...data: TData) => void {
     // const {componentWillMount: componentWillMount, componentWillUpdate: componentWillUpdate, render} = vg;
     const Cls = vg;
     return function functionComponent() {
