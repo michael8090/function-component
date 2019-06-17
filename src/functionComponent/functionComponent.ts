@@ -124,6 +124,10 @@ export function toFunctionComponent<TData extends any[], TView = {}>
         } else {
             // dispose last view and create current view
             removeCrossListNode(lastNode!, currentContext.parentInCurrentCallStack!, currentContext.preSiblingInCurrentCallStack);
+            const instance = lastNode!.i!;
+            if (instance.componentWillUnmount !== undefined) {
+                instance.componentWillUnmount();
+            }
             const lastNodeChild = lastNode!.c;
             lastNode!.c = undefined;
             if (lastNodeChild !== undefined) {

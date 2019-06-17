@@ -1,64 +1,76 @@
+import { BiDirectionLinkedList, BiDirectionLinkedListNode } from "../BiDirectionLinkedList";
 import { Component, toFunctionComponent } from "../functionComponent";
 import { Null } from './Null';
 
-type Props<T> = [T[], {(item: T, index: number): string | number}, (item: T, key: string | number) => void];
+type Props<T> = [T[], {(item: T, index: number): string | number}, (item: T) => void];
 
 let MapItems = function<T>(...data: Props<T>) {
     //
 }
 
+interface ItemRecord extends BiDirectionLinkedListNode {
+    index: number;
+    key: string | number;
+    g: number;
+}
+
 // todo: TS the generic here is gone and we got an 'unknown'
 // tslint:disable-next-line:no-shadowed-variable
 MapItems = toFunctionComponent(class MapItems<T> extends Component<Props<T>> {
-    lastKeyIndexMap: { [key: string]: number} = {};
-    lastCallList: Array<string | number | undefined> = [];
-    nextCallList: Array<string | number | undefined> = [];
-    keysNeedToAppend: Array<string | number> = [];
-    keyItemMap:  { [key: string]: T} = {};
+    lastKeyRecordMap: { [key: string]: ItemRecord} = {};
+    lastCallList: Array<T | undefined> = [];
+    generation = 0;
+    keys = new BiDirectionLinkedList<ItemRecord>();
+
+    // nextCallList: Array<string | number | undefined> = [];
+    // keysNeedToAppend: Array<string | number> = [];
+    // keyItemMap:  { [key: string]: T} = {};
     render([items, getKey, map]: Props<T>) {
-        const {lastKeyIndexMap, lastCallList, nextCallList, keysNeedToAppend, keyItemMap} = this;
+        this.generation ++;
+        const {lastCallList, lastKeyRecordMap, generation, keys} = this;
         const itemsLength = items.length;
-        for (let i = 0; i < itemsLength; i++) {
-            nextCallList[i] = undefined;
-        }
-        for (let i = 0; i < itemsLength; i++) {
-            const item = items[i];
-            const key = getKey(item, i);
-            keyItemMap[key] = item;
-            const lastIndex = lastKeyIndexMap[key];
-            if (lastIndex !== undefined) {
-                nextCallList[lastIndex] = key;
-            } else {
-                keysNeedToAppend.push(key);
-            }
-        }
-        for (let i = 0, blankHoleIndex = -1, l = keysNeedToAppend.length; i < l; i++) {
-            const nextCallListLength = nextCallList.length;
-            for (let j = blankHoleIndex + 1; j < nextCallListLength; j++) {
-                if (nextCallList[j] === undefined) {
-                    blankHoleIndex = j;
-                    break;
+        for (let i = 0, blankHoleIndex = -1; i < itemsLength; i++) {
+            const data = items[i];
+            const key = getKey(data, i);
+            const record = lastKeyRecordMap[key];
+            if (record === undefined) {
+                const newRecord = {
+                    key,
+                    index: i,
+                    g: generation
+                };
+                lastKeyRecordMap[key] = newRecord;
+                keys.add(newRecord);
+                const callListLength = lastCallList.length;
+                for (blankHoleIndex = blankHoleIndex + 1; blankHoleIndex < callListLength; blankHoleIndex++) {
+                    if (lastCallList[blankHoleIndex] === undefined) {
+                        break;
+                    }
                 }
+                lastCallList[blankHoleIndex] = data;
+            } else {
+                record.g = generation;
+                lastCallList[record.index] = data;
             }
-            nextCallList[blankHoleIndex] = keysNeedToAppend[i];
         }
-        const keyIndexMap = {};
-        for (let i = 0, l = nextCallList.length; i < l; i++) {
-            const key = nextCallList[i];
-            if (key === undefined) {
+        keys.walk(this.removeOutDated);
+
+        for (let i = 0, l = lastCallList.length; i < l; i++) {
+            const data = lastCallList[i];
+            if (data === undefined) {
                 Null();
             } else {
-                keyIndexMap[key] = i;
-                map(keyItemMap[key]!, key);
+                map(data);
             }
         }
-        this.lastKeyIndexMap = keyIndexMap;
-        const tmp = lastCallList;
-        this.lastCallList = this.nextCallList;
-        this.nextCallList = tmp;
-        this.nextCallList.length = 0;
-        keysNeedToAppend.length = 0;
-        this.keyItemMap = {};
+    }
+
+    private removeOutDated = (record: ItemRecord) => {
+        if (record.g !== this.generation) {
+            this.lastCallList[record.index] = undefined;
+            delete this.lastKeyRecordMap[record.key];
+            this.keys.delete(record);
+        }
     }
 }) as any;
 
@@ -72,15 +84,17 @@ export {MapItems}
  * RemoveSet = Set1 - Set2
  * AddSet = Set2 - Set1
  * for {index} of RemoveSet {
- *     CallList[index] = undefined;
+ *      CallList[index] = undefined;
+ *      delete Set1[key];
  * }
  * 
  * for {key, data} of AddSet {
- *     let holeIndex = findHoleIndex(CallList) || CallList.length;
- *     CallList[holeIndex] = data;
+ *      let holeIndex = findHoleIndex(CallList) || CallList.length;
+ *      CallList[holeIndex] = data;
+ *      Set1[key] = {key, data, index: holeIndex};
  * }
  * for data of CallList {
- *     data === undefined ? Null() : map(data)
+ *      data === undefined ? Null() : map(data)
  * }
  */
 
