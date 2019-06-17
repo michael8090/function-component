@@ -64,6 +64,26 @@ MapItems = toFunctionComponent(class MapItems<T> extends Component<Props<T>> {
 
 export {MapItems}
 
+/**
+ * CallList: Data[]
+ * Item {key, data, index?}
+ * Set1{i1, i2, i3}
+ * Set2{i2, i3, i4}
+ * RemoveSet = Set1 - Set2
+ * AddSet = Set2 - Set1
+ * for {index} of RemoveSet {
+ *     CallList[index] = undefined;
+ * }
+ * 
+ * for {key, data} of AddSet {
+ *     let holeIndex = findHoleIndex(CallList) || CallList.length;
+ *     CallList[holeIndex] = data;
+ * }
+ * for data of CallList {
+ *     data === undefined ? Null() : map(data)
+ * }
+ */
+
 // const items: number[] = [];
 
 // MapItems(items, (item, i) => item, (item) => {
