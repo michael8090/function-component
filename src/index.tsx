@@ -300,13 +300,21 @@ function UpdateBoxes() {
 }
 
 function UpdateBoxesWithMapItems() {
-    MapItems(boxesData.data, (box, i) => i, box => {
-        Box(box);
-    });
+    MapItems(
+        //
+        boxesData.data,
+        //
+        (box, i) => i,
+        //
+        box => {
+            Dummy(Dummy);
+        }
+    );
 }
 
 function MeshGroupWithBoxes() {
-    MeshGroup(UpdateBoxesWithMapItems);
+    // MeshGroup(UpdateBoxesWithMapItems);
+    MeshGroup(UpdateBoxes);
 }
 
 function updateComponents() {
@@ -351,7 +359,7 @@ const benchmark = require("benchmark");
 const Benchmark = benchmark.runInContext({ _, process });
 (window as any).Benchmark = Benchmark;
 (window as any).doBenchmark = () => {
-    const n = 100000;
+    const n = 50000;
     const suite = Benchmark.Suite();
     needDraw = false;
     boxesData = new BoxesData(n);
