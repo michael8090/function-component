@@ -1,5 +1,5 @@
 import {Group} from './Group';
-import {MapItems} from './Map';
+import {MapItems} from './MapItems';
 import {Null} from './Null';
 
 const Components = {
