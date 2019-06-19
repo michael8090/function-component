@@ -157,13 +157,6 @@ export function toFunctionComponent<TData extends any[], TView = {}>
             }
         }
 
-        /** set the layer variables */
-        // tell the next sibling, the pre sibling is me
-        currentContext.preSiblingInCurrentCallStack = currentNode;
-        currentContext.lastNode = lastNodeNextSibling;
-        /** done setting the layer variables */
-
-
         // done with the node, now for the children
 
         const currentInstance = currentNode.i!;
@@ -171,8 +164,6 @@ export function toFunctionComponent<TData extends any[], TView = {}>
         if (currentInstance.render !== undefined) {
             const parentViewBackup = currentContext.parentView;
             const parentInCurrentCallStackBackup = currentContext.parentInCurrentCallStack;
-            const preSiblingInCurrentCallStackBackup = currentContext.preSiblingInCurrentCallStack;
-            const lastNodeBackup = currentContext.lastNode;
     
             const view = currentInstance.view;
             if (view !== undefined) {
@@ -207,9 +198,13 @@ export function toFunctionComponent<TData extends any[], TView = {}>
 
             currentContext.parentView = parentViewBackup;
             currentContext.parentInCurrentCallStack = parentInCurrentCallStackBackup;
-            currentContext.preSiblingInCurrentCallStack = preSiblingInCurrentCallStackBackup;
-            currentContext.lastNode = lastNodeBackup;
         }
+
+        /** set the layer variables */
+        // tell the next sibling, the pre sibling is me
+        currentContext.preSiblingInCurrentCallStack = currentNode;
+        currentContext.lastNode = lastNodeNextSibling;
+        /** done setting the layer variables */
     }
 }
 

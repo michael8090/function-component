@@ -306,15 +306,13 @@ function UpdateBoxesWithMapItems() {
         //
         (box, i) => i,
         //
-        box => {
-            Dummy(Dummy);
-        }
+        Box
     );
 }
 
 function MeshGroupWithBoxes() {
-    // MeshGroup(UpdateBoxesWithMapItems);
-    MeshGroup(UpdateBoxes);
+    MeshGroup(UpdateBoxesWithMapItems);
+    // MeshGroup(UpdateBoxes);
 }
 
 function updateComponents() {

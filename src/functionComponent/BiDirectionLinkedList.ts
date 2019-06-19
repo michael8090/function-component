@@ -66,10 +66,6 @@ export class BiDirectionLinkedList<T extends BiDirectionLinkedListNode> {
             // we take head as immutable when iterating
             cb(head as T);
             head = next;
-            if (head === undefined) {
-                // tslint:disable-next-line:no-debugger
-                debugger;
-            }
         }
         if (tail) {
             cb(tail as T);
