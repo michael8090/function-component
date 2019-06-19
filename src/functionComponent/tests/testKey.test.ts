@@ -30,5 +30,4 @@ it('test react liked lifecycle hooks', function() {
             A(key);
         });
     });
-    expect(1).toBe(1);
 });
