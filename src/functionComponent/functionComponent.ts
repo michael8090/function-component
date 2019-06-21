@@ -12,6 +12,7 @@ interface ConstructorOf<T> {new (...args: any[]): T}
 
 export class Component<TData extends any[] = any[], TView = {}> {
     view: TView | undefined;
+    shouldComponentUpdate?(data: TData): boolean;
     componentWillMount?(data: TData, parent: TView): void;
     componentWillUpdate?(data: TData): void;
     componentWillUnmount?(): void;

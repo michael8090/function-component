@@ -1,6 +1,8 @@
 import { BiDirectionLinkedList, BiDirectionLinkedListNode } from "../BiDirectionLinkedList";
 import { Component, toFunctionComponent } from "../functionComponent";
-import { Null } from './Null';
+import { Null as NullModule } from './Null';
+
+const Null = NullModule;
 
 type Props<T> = [T[], {(item: T, index: number): string | number}, (item: T) => void];
 
@@ -14,11 +16,13 @@ interface ItemRecord extends BiDirectionLinkedListNode {
     g: number;
 }
 
+const NullData = Symbol('NullData');
+
 // todo: TS the generic here is gone and we got an 'unknown'
 // tslint:disable-next-line:no-shadowed-variable
 MapItems = toFunctionComponent(class MapItems<T> extends Component<Props<T>> {
     lastKeyRecordMap: { [key: string]: ItemRecord} = {};
-    lastCallList: Array<T | undefined> = [];
+    lastCallList: Array<T | Symbol> = [];
     generation = 0;
     keys = new BiDirectionLinkedList<ItemRecord>();
 
@@ -57,17 +61,17 @@ MapItems = toFunctionComponent(class MapItems<T> extends Component<Props<T>> {
 
         for (let i = 0, l = lastCallList.length; i < l; i++) {
             const data = lastCallList[i];
-            if (data === undefined) {
+            if (data === NullData) {
                 Null();
             } else {
-                map(data);
+                map(data as T);
             }
         }
     }
 
     private removeOutDated = (record: ItemRecord) => {
         if (record.g !== this.generation) {
-            this.lastCallList[record.index] = undefined;
+            this.lastCallList[record.index] = NullData;
             delete this.lastKeyRecordMap[record.key];
             this.keys.delete(record);
         }
