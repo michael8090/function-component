@@ -304,7 +304,7 @@ function UpdateBoxesWithMapItems() {
         //
         boxesData.data,
         //
-        (box, i) => i,
+        // (box, i) => i,
         //
         Box
     );

@@ -27,7 +27,12 @@ const Dummy = toFunctionComponent(class extends Component<[Function?], undefined
 
 });
 
-let data: undefined[] = new Array(50000);
+let data: Array<{}>;
+function createData(n: number) {
+    data = new Array(n).fill({});
+}
+
+createData(50000);
 
 function UpdateItems() {
     for (let i = 0, l = data.length; i < l; i++) {
@@ -39,8 +44,6 @@ function UpdateItemsWithMapItems() {
     MapItems(
         //
         data,
-        //
-        (box, i) => i,
         //
         () => {
             Dummy(Dummy)
@@ -66,7 +69,7 @@ tick();
 function doBenchmark() {
     const n = 50000;
     const suite = Benchmark.Suite();
-    data = new Array(n);
+    createData(n);
     updateComponents();
     const title = `update ${n} components`;
     suite

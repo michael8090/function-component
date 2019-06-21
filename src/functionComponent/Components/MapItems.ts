@@ -4,7 +4,7 @@ import { Null as NullModule } from './Null';
 
 const Null = NullModule;
 
-type Props<T> = [T[], {(item: T, index: number): string | number}, (item: T) => void];
+type Props<T> = [T[], (item: T) => void];
 
 let MapItems = function<T>(...data: Props<T>) {
     //
@@ -12,38 +12,34 @@ let MapItems = function<T>(...data: Props<T>) {
 
 interface ItemRecord extends BiDirectionLinkedListNode {
     index: number;
-    key: string | number;
     g: number;
+    data: any;
 }
 
 const NullData = Symbol('NullData');
 
 // todo: TS the generic here is gone and we got an 'unknown'
 // tslint:disable-next-line:no-shadowed-variable
-MapItems = toFunctionComponent(class MapItems<T> extends Component<Props<T>> {
-    lastKeyRecordMap: { [key: string]: ItemRecord} = {};
+MapItems = toFunctionComponent(class MapItems<T extends Object> extends Component<Props<T>> {
+    lastKeyRecordMap = new WeakMap<T, ItemRecord>();
     lastCallList: Array<T | Symbol> = [];
     generation = 0;
     keys = new BiDirectionLinkedList<ItemRecord>();
 
-    // nextCallList: Array<string | number | undefined> = [];
-    // keysNeedToAppend: Array<string | number> = [];
-    // keyItemMap:  { [key: string]: T} = {};
-    render([items, getKey, map]: Props<T>) {
+    render([items, map]: Props<T>) {
         this.generation ++;
         const {lastCallList, lastKeyRecordMap, generation, keys} = this;
         const itemsLength = items.length;
         for (let i = 0, blankHoleIndex = -1; i < itemsLength; i++) {
             const data = items[i];
-            const key = getKey(data, i);
-            const record = lastKeyRecordMap[key];
+            const record = lastKeyRecordMap.get(data);
             if (record === undefined) {
                 const newRecord = {
-                    key,
                     index: i,
-                    g: generation
+                    g: generation,
+                    data
                 };
-                lastKeyRecordMap[key] = newRecord;
+                lastKeyRecordMap.set(data, newRecord);
                 keys.add(newRecord);
                 const callListLength = lastCallList.length;
                 for (blankHoleIndex = blankHoleIndex + 1; blankHoleIndex < callListLength; blankHoleIndex++) {
@@ -72,7 +68,7 @@ MapItems = toFunctionComponent(class MapItems<T> extends Component<Props<T>> {
     private removeOutDated = (record: ItemRecord) => {
         if (record.g !== this.generation) {
             this.lastCallList[record.index] = NullData;
-            delete this.lastKeyRecordMap[record.key];
+            this.lastKeyRecordMap.delete(record.data);
             this.keys.delete(record);
         }
     }
