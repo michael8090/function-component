@@ -29,7 +29,7 @@ const Dummy = toFunctionComponent(class extends Component<[Function?], undefined
 
 let data: Array<{}>;
 function createData(n: number) {
-    data = new Array(n).fill({});
+    data = new Array(n).fill(1).map(() => ({}));
 }
 
 createData(50000);

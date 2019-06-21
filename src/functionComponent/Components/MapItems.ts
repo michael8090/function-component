@@ -1,4 +1,5 @@
 import { BiDirectionLinkedList, BiDirectionLinkedListNode } from "../BiDirectionLinkedList";
+import EnhancedWeakMap from '../EWeakMap';
 import { Component, toFunctionComponent } from "../functionComponent";
 import { Null as NullModule } from './Null';
 
@@ -21,7 +22,7 @@ const NullData = Symbol('NullData');
 // todo: TS the generic here is gone and we got an 'unknown'
 // tslint:disable-next-line:no-shadowed-variable
 MapItems = toFunctionComponent(class MapItems<T extends Object> extends Component<Props<T>> {
-    lastKeyRecordMap = new WeakMap<T, ItemRecord>();
+    lastKeyRecordMap = new EnhancedWeakMap<T, ItemRecord>();
     lastCallList: Array<T | Symbol> = [];
     generation = 0;
     keys = new BiDirectionLinkedList<ItemRecord>();
