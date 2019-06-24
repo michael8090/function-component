@@ -1,4 +1,4 @@
 #!/usr/bin/env node
 'use strict';
 
-require('./build/src/index.js');
+require('./dist/index.js');

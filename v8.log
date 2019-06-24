@@ -1,0 +1,21 @@
+v8-version,7,7,0,0,1
+code-deopt,111758,2912,0x1a5dedbc2f20,-1,19703,lazy,<./dist/index.js:800:5>,(unknown)
+code-deopt,195388,3136,0x1a5dedbc3ee0,-1,20441,soft,<./dist/index.js:827:10>,Insufficient type feedback for generic named access
+code-deopt,204444,608,0x1a5dedbc4c60,-1,17254,soft,<./dist/index.js:697:7>,Insufficient type feedback for call
+code-deopt,204497,320,0x1a5dedbc4b20,-1,19196,eager,<./dist/index.js:776:18>,wrong map
+code-deopt,835175,224,0x1a5dedbc4c60,-1,19462,soft,<./dist/index.js:788:19>,Insufficient type feedback for generic keyed access
+code-deopt,912352,4832,0x1a5dedbc8400,1,16973,soft,<./dist/index.js:680:21> inlined at <./dist/index.js:827:10>,Insufficient type feedback for generic named access
+code-deopt,930750,480,0x1a5dedbc4ec0,-1,4108,eager,<./dist/index.js:152:29>,wrong value
+code-deopt,1022445,7552,0x1a5dedbcafc0,5,4175,soft,<./dist/index.js:155:23> inlined at <./dist/index.js:245:26> inlined at <./dist/index.js:356:47>,Insufficient type feedback for generic named access
+code-deopt,1023728,352,0x1a5dedbcace0,-1,4175,soft,<./dist/index.js:155:23>,Insufficient type feedback for generic named access
+code-deopt,1023797,576,0x1a5dedbc5500,-1,4855,eager,<./dist/index.js:189:16>,wrong map
+code-deopt,1028495,6752,0x1a5dedbcf660,3,4855,eager,<./dist/index.js:189:16> inlined at <./dist/index.js:411:9> inlined at <./dist/index.js:1038:7>,wrong map
+code-deopt,1235855,8032,0x1a5dedbd1320,-1,8661,eager,<./dist/index.js:365:20>,wrong map
+code-deopt,1244840,9952,0x1a5dedbd6b60,-1,19814,eager,<./dist/index.js:802:24>,wrong map
+code-deopt,1261380,10880,0x1a5dedbd9240,-1,20360,eager,<./dist/index.js:822:18>,wrong map
+code-deopt,1267444,6784,0x1a5dedbd5000,1,4690,soft,<./dist/index.js:182:16> inlined at <./dist/index.js:377:7> inlined at <./dist/index.js:1064:5>,Insufficient type feedback for generic named access
+code-deopt,1426508,7904,0x1a5dedbde8e0,1,8381,eager,<./dist/index.js:352:26> inlined at <./dist/index.js:1064:5> inlined at <./dist/index.js:835:9>,wrong map
+code-deopt,1426611,8000,0x1a5dedbe07c0,0,8381,eager,<./dist/index.js:352:26> inlined at <./dist/index.js:1064:5>,wrong map
+code-deopt,1426662,8384,0x1a5dedbdc820,-1,8381,eager,<./dist/index.js:352:26>,wrong map
+code-deopt,1426773,6816,0x1a5dedbd3560,0,8381,eager,<./dist/index.js:352:26> inlined at <./dist/index.js:1038:7>,wrong map
+code-deopt,1520436,10688,0x1a5dedbe9500,-1,20633,eager,<./dist/index.js:835:9>,wrong call target

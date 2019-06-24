@@ -1,5 +1,5 @@
 import { BiDirectionLinkedList, BiDirectionLinkedListNode } from "../BiDirectionLinkedList";
-import EnhancedWeakMap from '../EWeakMap';
+// import EnhancedWeakMap from '../EWeakMap';
 import { Component, toFunctionComponent } from "../functionComponent";
 import { Null as NullModule } from './Null';
 
@@ -20,27 +20,29 @@ interface ItemRecord extends BiDirectionLinkedListNode {
 const NullData = Symbol('NullData');
 
 // todo: TS the generic here is gone and we got an 'unknown'
+let id = 0;
 // tslint:disable-next-line:no-shadowed-variable
 MapItems = toFunctionComponent(class MapItems<T extends Object> extends Component<Props<T>> {
-    lastKeyRecordMap = new EnhancedWeakMap<T, ItemRecord>();
+    // lastKeyRecordMap = new EnhancedWeakMap<T, ItemRecord>();
     lastCallList: Array<T | Symbol> = [];
     generation = 0;
     keys = new BiDirectionLinkedList<ItemRecord>();
+    private weakKey = '_wk' + (id++);
 
     render([items, map]: Props<T>) {
         this.generation ++;
-        const {lastCallList, lastKeyRecordMap, generation, keys} = this;
+        const {lastCallList, generation, keys, weakKey} = this;
         const itemsLength = items.length;
         for (let i = 0, blankHoleIndex = -1; i < itemsLength; i++) {
             const data = items[i];
-            const record = lastKeyRecordMap.get(data);
+            const record = (data as any)[weakKey];
             if (record === undefined) {
                 const newRecord = {
                     index: i,
                     g: generation,
                     data
                 };
-                lastKeyRecordMap.set(data, newRecord);
+                (data as any)[weakKey] = newRecord;
                 keys.add(newRecord);
                 const callListLength = lastCallList.length;
                 for (blankHoleIndex = blankHoleIndex + 1; blankHoleIndex < callListLength; blankHoleIndex++) {
@@ -69,7 +71,7 @@ MapItems = toFunctionComponent(class MapItems<T extends Object> extends Componen
     private removeOutDated = (record: ItemRecord) => {
         if (record.g !== this.generation) {
             this.lastCallList[record.index] = NullData;
-            this.lastKeyRecordMap.delete(record.data);
+            (record.data as any)[this.weakKey] = undefined;
             this.keys.delete(record);
         }
     }
