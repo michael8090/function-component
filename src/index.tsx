@@ -1,1 +1,1 @@
-import './cli-perf';
+import './perf/perf-browser';
