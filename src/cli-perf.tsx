@@ -9,17 +9,17 @@ const rootView = new View();
 
 const Root = getRoot(rootView);
 
-const Dummy = toFunctionComponent(class extends Component<[Function?], undefined> {
+const Dummy = toFunctionComponent(class extends Component<Function | undefined, undefined> {
     componentWillMount() {
         //
     }
-    componentWillUpdate(args: [Function?]) {
+    componentWillUpdate(args?: Function) {
         //
     }
     componentWillUnmount() {
         //
     }
-    render([child]: [Function?]) {
+    render(child?: Function) {
         if (child !== undefined) {
             child();
         }
@@ -41,14 +41,14 @@ function UpdateItems() {
 }
 
 function UpdateItemsWithMapItems() {
-    MapItems(
+    MapItems([
         //
         data,
         //
         () => {
             Dummy(Dummy)
         }
-    );
+    ]);
 }
 
 Root(UpdateItemsWithMapItems);

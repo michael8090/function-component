@@ -7,7 +7,7 @@ const Null = NullModule;
 
 type Props<T> = [T[], (item: T) => void];
 
-let MapItems = function<T>(...data: Props<T>) {
+let MapItems = function<T>(data: Props<T>) {
     //
 }
 
@@ -61,7 +61,7 @@ MapItems = toFunctionComponent(class MapItems<T extends Object> extends Componen
         for (let i = 0, l = lastCallList.length; i < l; i++) {
             const data = lastCallList[i];
             if (data === NullData) {
-                Null();
+                Null(undefined);
             } else {
                 map(data as T);
             }

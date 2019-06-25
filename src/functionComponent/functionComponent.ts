@@ -10,7 +10,7 @@ const removeCrossListNode = CrossList.remove;
 
 interface ConstructorOf<T> {new (...args: any[]): T}
 
-export class Component<TData extends any[] = any[], TView = {}> {
+export class Component<TData, TView = {}> {
     view: TView | undefined;
     shouldComponentUpdate?(data: TData): boolean;
     componentWillMount?(data: TData, parent: TView): void;
@@ -79,12 +79,11 @@ interface Context {
 
 let context: Context | undefined;
 
-export function toFunctionComponent<TData extends any[], TView = {}>
-    (vg: ConstructorOf<Component<TData, TView>>): (...data: TData) => void {
+export function toFunctionComponent<TData, TView = {}>
+    (vg: ConstructorOf<Component<TData, TView>>): (data: TData) => void {
     // const {componentWillMount: componentWillMount, componentWillUpdate: componentWillUpdate, render} = vg;
     const Cls = vg;
-    return function functionComponent() {
-        const data = arguments as any as TData;
+    return function functionComponent(data: TData) {
         // avoid accessing closure
         const currentContext = context;
         if (currentContext === undefined) {
@@ -215,8 +214,8 @@ function createStackNode() {
     });
 }
 
-const Root = toFunctionComponent(class extends Component<[Function]> {
-    render([child]: [Function]) {
+const Root = toFunctionComponent(class extends Component<Function> {
+    render(child: Function) {
         child();
     }
 })

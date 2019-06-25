@@ -15,7 +15,7 @@ class Logger {
 
 export const logger = new Logger();
 
-type WithChild = [Function?];
+type WithChild = Function | undefined;
 
 export function getLoggerFunctionComponent(name: string) {
     return toFunctionComponent(class extends Component<WithChild> {
@@ -29,7 +29,7 @@ export function getLoggerFunctionComponent(name: string) {
         componentWillUpdate() {
             logger.log(`${name}: componentWillUpdate`);
         }
-        render([child]: WithChild) {
+        render(child: WithChild) {
             if (child !== undefined) {
                 child();
             }
