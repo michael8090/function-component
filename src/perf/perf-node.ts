@@ -2,11 +2,12 @@ import {createData, updateComponents} from './updateComponents';
 
 const t0 = Date.now();
 const itemsCount = 500000;
-let n = 100;
+const n = 100;
+let count = 100;
 
 createData(itemsCount);
 
-while(n--) {
+while(count--) {
     updateComponents();
 }
 

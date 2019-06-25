@@ -1,1 +1,1 @@
-import './perf/perf-browser';
+import './perf/perf-node';
