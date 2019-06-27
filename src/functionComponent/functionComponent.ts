@@ -80,15 +80,15 @@ interface Context {
 
 let context: Context | undefined;
 
-const regex = /function.*\((.*)\)/;
-function getArguments(fn: Function) {
-    const match = fn.toString().match(regex);
-    if (match !== null) {
-        return match[1];
-    } else {
-        throw new Error('invalid function');
-    }
-}
+// const regex = /function.*\((.*)\)/;
+// function getArguments(fn: Function) {
+//     const match = fn.toString().match(regex);
+//     if (match !== null) {
+//         return match[1];
+//     } else {
+//         throw new Error('invalid function');
+//     }
+// }
 
 export function toFunctionComponent<TData extends any[], TView = {}>
     (vg: ConstructorOf<Component<TData, TView>>): (...data: TData) => void {
@@ -230,25 +230,32 @@ export function toFunctionComponent<TData extends any[], TView = {}>
     ];
 
     const proto = Cls.prototype;
-    let argsString: string = '';
+    // let argsString: string = '';
     let argsCount = 0;
     for (let i = 0, hl = hooks.length; i < hl; i++) {
         const hookName = hooks[i];
-        const fn = proto[hookName];
+        const fn = proto[hookName] as Function;
         if (fn !== undefined) {
-            const args = getArguments(fn);
-            const count = args.split(',').length;
+            // const args = getArguments(fn);
+            const count = fn.length;
             if (count > argsCount) {
                 argsCount = count;
-                argsString = args;
+                // argsString = args;
             }
         }
     }
 
+    // avoid name collision
+    const ars: string[] = [];
+    for (let i = 0; i < argsCount; i++) {
+        ars.push('_'+i);
+    }
+    const argsString = ars.join(',');
+
     // tslint:disable-next-line:prefer-const
     let f: any;
     // tslint:disable-next-line:no-eval
-    eval('f = ' + functionComponent.toString().replace(/ARGS/g, argsString));
+    eval('f = ' + functionComponent.toString().replace(functionComponent.name, Cls.name + 'FunctionComponent').replace(/ARGS/g, argsString));
     return f;
 }
 

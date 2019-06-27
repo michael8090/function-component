@@ -19,7 +19,7 @@ const Dummy = toFunctionComponent(class extends Component<[Function?], undefined
     }
     render(child: Function | undefined) {
         if (child !== undefined) {
-            child();
+            child(undefined);
         }
     }
 
