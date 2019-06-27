@@ -47,7 +47,7 @@ MapItems = toFunctionComponent(class MapItems<T> extends Component<Props<T>> {
                 keys.add(newRecord);
                 const callListLength = lastCallList.length;
                 for (blankHoleIndex = blankHoleIndex + 1; blankHoleIndex < callListLength; blankHoleIndex++) {
-                    if (lastCallList[blankHoleIndex] === undefined) {
+                    if (lastCallList[blankHoleIndex] === NullData) {
                         break;
                     }
                 }
