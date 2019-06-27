@@ -12,11 +12,12 @@ interface ConstructorOf<T> {new (...args: any[]): T}
 
 export class Component<TData extends any[] = any[], TView = {}> {
     view: TView | undefined;
-    shouldComponentUpdate?(data: TData): boolean;
-    componentWillMount?(data: TData, parent: TView): void;
-    componentWillUpdate?(data: TData): void;
+    onInit?(parent: TView): void;
+    shouldComponentUpdate?(...data: TData): boolean;
+    componentWillMount?(...data: TData): void;
+    componentWillUpdate?(...data: TData): void;
     componentWillUnmount?(): void;
-    render?(data: TData): void;
+    render?(...data: TData): void;
 }
 
 interface StackNode extends CrossListNode {
@@ -79,12 +80,22 @@ interface Context {
 
 let context: Context | undefined;
 
+const regex = /function.*\((.*)\)/;
+function getArguments(fn: Function) {
+    const match = fn.toString().match(regex);
+    if (match !== null) {
+        return match[1];
+    } else {
+        throw new Error('invalid function');
+    }
+}
+
 export function toFunctionComponent<TData extends any[], TView = {}>
     (vg: ConstructorOf<Component<TData, TView>>): (...data: TData) => void {
     // const {componentWillMount: componentWillMount, componentWillUpdate: componentWillUpdate, render} = vg;
     const Cls = vg;
-    return function functionComponent() {
-        const data = arguments as any as TData;
+    function functionComponent(ARGS: any) {
+        // const data = arguments as any as TData;
         // avoid accessing closure
         const currentContext = context;
         if (currentContext === undefined) {
@@ -114,7 +125,7 @@ export function toFunctionComponent<TData extends any[], TView = {}>
             // update
             const instance = currentNode.i;
             if (instance!.componentWillUpdate !== undefined) {
-                instance!.componentWillUpdate(data);
+                instance!.componentWillUpdate(ARGS);
             }
         } else if (lastCls! === undefined) {
             if (currentContext.lastCallStack === undefined) {
@@ -143,9 +154,12 @@ export function toFunctionComponent<TData extends any[], TView = {}>
         if (isCreate === true) {
             // create current view
             // todo: if use currentCls, 3.2ms to 4.8ms
-            const instance = new currentCls(data);
+            const instance = new currentCls(ARGS);
+            if (instance.onInit !== undefined) {
+                instance.onInit(currentContext.parentView);
+            }
             if (instance.componentWillMount !== undefined) {
-                instance.componentWillMount(data, currentContext.parentView);
+                (instance.componentWillMount as any)(ARGS);
             }
             currentNode.i = instance;
             currentNode.C = currentCls;
@@ -182,7 +196,7 @@ export function toFunctionComponent<TData extends any[], TView = {}>
             currentContext.lastNode = lastNodeChild;
     
             // !!!children enter!!!
-            currentInstance.render(data);
+            (currentInstance.render as any)(ARGS);
             // !!!children done!!!
             
             const preSiblingInCurrentCallStack = currentContext.preSiblingInCurrentCallStack as StackNode | undefined;
@@ -207,6 +221,35 @@ export function toFunctionComponent<TData extends any[], TView = {}>
         currentContext.lastNode = lastNodeNextSibling;
         /** done setting the layer variables */
     }
+
+    const hooks = [
+        'shouldComponentUpdate',
+        'componentWillMount',
+        'componentWillUpdate',
+        'render'
+    ];
+
+    const proto = Cls.prototype;
+    let argsString: string = '';
+    let argsCount = 0;
+    for (let i = 0, hl = hooks.length; i < hl; i++) {
+        const hookName = hooks[i];
+        const fn = proto[hookName];
+        if (fn !== undefined) {
+            const args = getArguments(fn);
+            const count = args.split(',').length;
+            if (count > argsCount) {
+                argsCount = count;
+                argsString = args;
+            }
+        }
+    }
+
+    // tslint:disable-next-line:prefer-const
+    let f: any;
+    // tslint:disable-next-line:no-eval
+    eval('f = ' + functionComponent.toString().replace(/ARGS/g, argsString));
+    return f;
 }
 
 function createStackNode() {
@@ -216,7 +259,7 @@ function createStackNode() {
 }
 
 const Root = toFunctionComponent(class extends Component<[Function]> {
-    render([child]: [Function]) {
+    render(child: Function) {
         child();
     }
 })

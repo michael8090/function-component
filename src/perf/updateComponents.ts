@@ -11,13 +11,13 @@ const Dummy = toFunctionComponent(class extends Component<[Function?], undefined
     componentWillMount() {
         //
     }
-    componentWillUpdate(args: [Function?]) {
+    componentWillUpdate(args: Function | undefined) {
         //
     }
     componentWillUnmount() {
         //
     }
-    render([child]: [Function?]) {
+    render(child: Function | undefined) {
         if (child !== undefined) {
             child();
         }

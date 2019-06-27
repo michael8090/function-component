@@ -29,7 +29,7 @@ MapItems = toFunctionComponent(class MapItems<T> extends Component<Props<T>> {
     // nextCallList: Array<string | number | undefined> = [];
     // keysNeedToAppend: Array<string | number> = [];
     // keyItemMap:  { [key: string]: T} = {};
-    render([items, getKey, map]: Props<T>) {
+    render(items: Props<T>[0], getKey: Props<T>[1], map: Props<T>[2]) {
         this.generation ++;
         const {lastCallList, lastKeyRecordMap, generation, keys} = this;
         const itemsLength = items.length;
