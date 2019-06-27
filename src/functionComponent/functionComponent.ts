@@ -265,8 +265,6 @@ const Root = toFunctionComponent(class extends Component<[Function]> {
 })
 
 export function getRoot<T>(rootView: T) {
-    const cachedMemoryPool = new MemoryPool(createStackNode);
-
     const cachedContext: Context = {
         // the variables shared by all function calls of a root
 
