@@ -11,7 +11,7 @@ function tick() {
     requestAnimationFrame(tick);
 }
 
-tick();
+// tick();
 
 function doBenchmark() {
     const suite = Benchmark.Suite();
@@ -31,3 +31,4 @@ const benchmark = require("benchmark");
 const Benchmark = benchmark.runInContext({ _, process });
 (global as any).Benchmark = Benchmark;
 (global as any).doBenchmark = doBenchmark;
+(global as any).tick = tick;
