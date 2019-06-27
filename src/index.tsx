@@ -1,2 +1,2 @@
-// import './perf/perf-browser';
-import './demo-boxes'
+import './perf/perf-browser';
+// import './demo-boxes'
