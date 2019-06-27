@@ -33,16 +33,22 @@ function UpdateItems() {
     }
 }
 
+function getKey(_: any, i: number) {
+    return i;
+}
+
+function renderDummy() {
+    Dummy(Dummy);
+}
+
 function UpdateItemsWithMapItems() {
     MapItems(
         //
         data,
         //
-        (box, i) => i,
+        getKey,
         //
-        () => {
-            Dummy(Dummy)
-        }
+        renderDummy
     );
 }
 

@@ -165,6 +165,7 @@ export function toFunctionComponent<TData extends any[], TView = {}>
             currentNode.C = currentCls;
             currentNode.nS = undefined;
             currentNode.c = undefined;
+            currentNode.qn = undefined;
 
             if (currentContext.parentInCurrentCallStack !== undefined) {
                 // add the currentNode to the currentCallStack

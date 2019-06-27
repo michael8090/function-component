@@ -14,7 +14,7 @@ interface CrossListNode extends QueueNode {
 
 const queue: Queue<CrossListNode> = new Queue();
 const CrossList = {
-    remove(node: CrossListNode, parent: CrossListNode, preSibling?: CrossListNode) {
+    remove(node: CrossListNode, parent: CrossListNode, preSibling: CrossListNode | undefined) {
         if (preSibling === undefined) {
             parent.c = node.nS;
         } else {
@@ -22,7 +22,7 @@ const CrossList = {
         }
     },
 
-    add(node: CrossListNode, parent: CrossListNode, preSibling?: CrossListNode) {
+    add(node: CrossListNode, parent: CrossListNode, preSibling: CrossListNode | undefined) {
         if (preSibling === undefined) {
             parent.c = node;
         } else {
