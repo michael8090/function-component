@@ -25,7 +25,7 @@ const Dummy = toFunctionComponent(class extends Component<[Function?], undefined
 
 });
 
-let data: Array<{}> = new Array(50000);
+let data: Array<{}>;
 
 function UpdateItems() {
     for (let i = 0, l = data.length; i < l; i++) {
@@ -46,11 +46,13 @@ function UpdateItemsWithMapItems() {
     );
 }
 
+createData(50000);
+
 Root(UpdateItemsWithMapItems);
 // Root(UpdateItems);
 
 export function createData(n: number) {
-    data = new Array(50000).fill(undefined).map(() => ({}));
+    data = new Array(n).fill(undefined).map(() => ({}));
 }
 
 export function updateComponents() {

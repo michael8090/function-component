@@ -2,7 +2,9 @@ import * as _ from "lodash";
 import * as process from "process";
 import {createData, updateComponents} from './updateComponents';
 
-createData(50000);
+const n = 500000;
+
+createData(n);
 
 function tick() {
     updateComponents();
@@ -12,7 +14,6 @@ function tick() {
 tick();
 
 function doBenchmark() {
-    const n = 50000;
     const suite = Benchmark.Suite();
     createData(n);
     updateComponents();
