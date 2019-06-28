@@ -4,7 +4,7 @@ import { getLoggerFunctionComponent, logger } from "./testUtils.lib";
 
 const { Null } = Components;
 
-const Root = getRoot({});
+const {Root} = getRoot({});
 const A = getLoggerFunctionComponent("A");
 const B = getLoggerFunctionComponent("B");
 

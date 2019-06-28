@@ -6,6 +6,7 @@ const CrossList = CL;
 
 const addCrossListNode = CrossList.add;
 const walkCrossListNode = CrossList.walk;
+const walkModifiedCrossListNode = CrossList.walkAlongModifiedList;
 const removeCrossListNode = CrossList.remove;
 
 interface ConstructorOf<T> {new (...args: any[]): T}
@@ -20,12 +21,19 @@ interface StackNode extends CrossListNode {
      * component function
      */
     f?: (...data: any[]) => void;
+
+    /**
+     * marked to be force updated
+     */
+    // fu?: boolean;
 }
 
 function disposeNode(node: StackNode) {
     const instance = node.i;
     if (instance !== undefined) {
         instance.__isUnmounted = true;
+        instance.cachedArgs = undefined;
+        instance.__context = undefined;
         if (instance.componentWillUnmount !== undefined) {
             instance.componentWillUnmount();
         }
@@ -48,6 +56,7 @@ interface Context {
      * memoryPool
      */
     memoryPool: MemoryPool;
+    isBatchedUpdate: boolean;
     // root variables definition end
 
     // the variables shared inside a layer of a subtree
@@ -82,6 +91,11 @@ export class Component<TData extends any[] = any[], TView = {}> {
     __forcedUpdate: boolean;
     // tslint:disable-next-line:variable-name
     __isUnmounted: boolean;
+
+    // tslint:disable-next-line:variable-name
+    __context: Context | undefined;
+
+    cachedArgs: TData = [] as any;
     view: TView | undefined;
     onInit?(parent: TView): void;
     shouldComponentUpdate?(...data: TData): boolean;
@@ -89,19 +103,24 @@ export class Component<TData extends any[] = any[], TView = {}> {
     componentWillUpdate?(...data: TData): void;
     componentWillUnmount?(): void;
     render?(...data: TData): void;
-    forceUpdate(...data: TData) {
+    forceUpdate() {
         if (this.__isUnmounted === true) {
             // tslint:disable-next-line:no-console
             console.error(`trying to update an unmounted component: ${this.constructor.name}`);
             return;
         }
-        context = {
-            lastNode: this.__stackNode,
-            lastCallStack: 'fakeStack'
-        } as any as Context;
-        this.__forcedUpdate = true;;
-        this.__stackNode.f!(...data);
-        this.__forcedUpdate = false;;
+        if (context !== undefined && context.isBatchedUpdate === true) {
+            this.__forcedUpdate = true;
+            return;
+        }
+        const {cachedArgs, __context} = this;
+        context = __context!;
+
+        context.lastNode = this.__stackNode;
+
+        this.__forcedUpdate = true;
+        this.__stackNode.f!.apply(null, cachedArgs);
+        context = undefined;
     }
 }
 
@@ -139,8 +158,12 @@ export function toFunctionComponent<TData extends any[], TView = {}>
         if (lastCls! === currentCls) {
             // update
             const instance = currentNode.i!;
-            if (instance.__forcedUpdate !== true && instance.shouldComponentUpdate !== undefined) {
-                isUpdateSkipped = instance.shouldComponentUpdate(ARGS) === false;
+            if (instance.__forcedUpdate !== true) {
+                if (instance.shouldComponentUpdate !== undefined) {
+                    isUpdateSkipped = instance.shouldComponentUpdate(ARGS) === false;
+                }
+            } else {
+                instance.__forcedUpdate = false;
             }
             if (isUpdateSkipped === false) {
                 if (instance.componentWillUpdate !== undefined) {
@@ -161,6 +184,8 @@ export function toFunctionComponent<TData extends any[], TView = {}>
                 removeCrossListNode(lastNode!, currentContext.parentInCurrentCallStack!, currentContext.preSiblingInCurrentCallStack);
                 const instance = lastNode!.i!;
                 instance.__isUnmounted = true;
+                instance.cachedArgs = undefined;
+                instance.__context = undefined;
                 if (instance.componentWillUnmount !== undefined) {
                     instance.componentWillUnmount();
                 }
@@ -180,6 +205,7 @@ export function toFunctionComponent<TData extends any[], TView = {}>
                 // todo: if use currentCls, 3.2ms to 4.8ms
                 const instance = new currentCls(ARGS);
                 instance.__stackNode = currentNode;
+                instance.__context = currentContext;
                 if (instance.onInit !== undefined) {
                     instance.onInit(currentContext.parentView);
                 }
@@ -200,10 +226,13 @@ export function toFunctionComponent<TData extends any[], TView = {}>
             }
         }
 
+        const currentInstance = currentNode.i!;
+        const cachedArgs = currentInstance.cachedArgs as any[];
+        
+        // MACRO: CACHE_ARGS
+
         if (isUpdateSkipped === false) {
             // done with the node, now for the children
-
-            const currentInstance = currentNode.i!;
 
             if (currentInstance.render !== undefined) {
                 const parentViewBackup = currentContext.parentView;
@@ -277,15 +306,22 @@ export function toFunctionComponent<TData extends any[], TView = {}>
 
     // avoid name collision
     const ars: string[] = [];
+    const cacheArgs: string[] = [];
     for (let i = 0; i < argsCount; i++) {
-        ars.push('_'+i);
+        ars.push('_' + i);
+        cacheArgs.push(`(cachedArgs[${i}] !== ${'_'+i}) && (cachedArgs[${i}] = ${'_'+i});`);
     }
     const argsString = ars.join(',');
+    const cacheArgsString = cacheArgs.join('\n');
 
     // tslint:disable-next-line:prefer-const
     let f: any;
+    const newFunctionString = functionComponent.toString()
+        .replace('// MACRO: CACHE_ARGS', cacheArgsString)
+        .replace(functionComponent.name, Cls.name + 'FunctionComponent')
+        .replace(/ARGS/g, argsString);
     // tslint:disable-next-line:no-eval
-    eval('f = ' + functionComponent.toString().replace(functionComponent.name, Cls.name + 'FunctionComponent').replace(/ARGS/g, argsString));
+    eval('f = ' + newFunctionString);
 
     // use the compiled version is 60% faster
     // and I see when use the original function, there are many "Builtins_CallFunction_ReceiverIsNotNullOrUndefined"
@@ -315,6 +351,7 @@ export function getRoot<T>(rootView: T) {
 
         lastCallStack: undefined,
         memoryPool: new MemoryPool(createStackNode),
+        isBatchedUpdate: false,
     
         // root variables definition end
     
@@ -328,16 +365,37 @@ export function getRoot<T>(rootView: T) {
         lastNode: undefined,
     }
 
-    return function (child: Function) {
-        cachedContext.lastNode = cachedContext.lastCallStack;
-        cachedContext.parentInCurrentCallStack = undefined;
-        cachedContext.preSiblingInCurrentCallStack = undefined;
-        cachedContext.parentView = rootView;
+    function forceUpdate(node: StackNode) {
+        const instance = node.i!;
+        if (instance.__forcedUpdate === true) {
+            instance.forceUpdate();
+        }
+    }
 
-        context = cachedContext;
+    return ({
+        Root(child: Function) {
+            cachedContext.lastNode = cachedContext.lastCallStack;
+            cachedContext.parentInCurrentCallStack = undefined;
+            cachedContext.preSiblingInCurrentCallStack = undefined;
+            cachedContext.parentView = rootView;
+    
+            context = cachedContext;
+    
+            Root(child);
+    
+            context = undefined;
+        },
+        batchedUpdates(fn: Function) {
+            context = cachedContext;
+            context.isBatchedUpdate = true;
+            fn();
+            context.isBatchedUpdate = false;
+            context = undefined;
 
-        Root(child);
-
-        context = undefined;
-    };
+            const {lastCallStack} = cachedContext;
+            if (lastCallStack !== undefined) {
+                walkModifiedCrossListNode(lastCallStack, forceUpdate)
+            }
+        }
+    });
 }

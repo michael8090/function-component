@@ -5,11 +5,15 @@ const {MapItems} = Components;
 
 const rootView = new View();
 
-const Root = getRoot(rootView);
+const {Root, batchedUpdates} = getRoot(rootView);
+
+const instances: Array<Component<any, any>> = [];
 
 const Dummy = toFunctionComponent(class extends Component<[Function?], undefined> {
+    index: number;
     componentWillMount() {
-        //
+        this.index = instances.length;
+        instances.push(this);
     }
     componentWillUpdate(args: Function | undefined) {
         //
@@ -52,16 +56,26 @@ function UpdateItemsWithMapItems() {
     );
 }
 
-createData(50000);
+function UpdateItemsWithBatchedUpdates() {
+    batchedUpdates(() => {
+        for (let i = 0, l = instances.length; i < l; i++) {
+            instances[i].forceUpdate();
+        }
+    });
+}
 
-// Root(UpdateItemsWithMapItems);
-Root(UpdateItems);
-
-export function createData(n: number) {
+function createData(n: number) {
     data = new Array(n).fill(undefined).map(() => ({}));
+}
+
+export function init(n: number) {
+    createData(n);
+    // Root(UpdateItemsWithMapItems);
+    Root(UpdateItems);
 }
 
 export function updateComponents() {
     // Root(UpdateItemsWithMapItems);
-    Root(UpdateItems);
+    // Root(UpdateItems);
+    UpdateItemsWithBatchedUpdates();
 }

@@ -3,7 +3,7 @@ import {Component, getRoot, toFunctionComponent} from '../functionComponent';
 
 const {Null, MapItems} =Components;
 it('test react liked lifecycle hooks', function() {
-    const Root = getRoot({});
+    const {Root} = getRoot({});
     type Props = [number];
     const A = toFunctionComponent(class extends Component<Props> {
         private key: number;

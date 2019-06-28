@@ -164,7 +164,7 @@ const Box = toFunctionComponent(class extends Component<Props, MeshView> {
 
 const rootView = new View();
 
-const Root = getRoot(rootView);
+const {Root} = getRoot(rootView);
 
 Root(() => {
     MeshGroup(undefined);
@@ -289,11 +289,11 @@ function UpdateBoxes() {
         // });
         
         // nested
-        // Box(data, {scale: 2}, () => {
-        //     Box(data, {scale: 0.5, color: 0xff00ff}, () => {
-        //         Box(data, {scale: 0.5, color: 0x00ff00})
-        //     });
-        // });
+        Box(data, {scale: 2}, () => {
+            Box(data, {scale: 0.5, color: 0xff00ff}, () => {
+                Box(data, {scale: 0.5, color: 0x00ff00})
+            });
+        });
         // noop(boxesData.data[i]);
         // Dummy(() => {
         //     Dummy(() => {

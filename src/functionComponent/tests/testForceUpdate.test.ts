@@ -2,7 +2,7 @@ import {Component, getRoot, toFunctionComponent} from '../functionComponent';
 import {logger} from './testUtils.lib';
 
 it('test forceUpdate', function() {
-    const Root = getRoot({});
+    const {Root} = getRoot({});
     interface GetRef {
         (ref: Component): void;
     }
@@ -59,7 +59,7 @@ it('test forceUpdate', function() {
     ).toBeTruthy();
 
     logger.clear();
-    iAU!.forceUpdate(setIAU);
+    iAU!.forceUpdate();
     expect(
         logger.equals([
             'AlwaysUpdate: componentWillUpdate'
@@ -70,7 +70,7 @@ it('test forceUpdate', function() {
     Root(() => {
         //
     });
-    iAU!.forceUpdate(setIAU);
+    iAU!.forceUpdate();
     expect(
         logger.equals([])
     ).toBeTruthy();
@@ -82,7 +82,7 @@ it('test forceUpdate', function() {
     ).toBeTruthy();
 
     logger.clear();
-    iNU!.forceUpdate(setINU);
+    iNU!.forceUpdate();
     expect(
         logger.equals([
             'NeverUpdate: componentWillUpdate'

@@ -36,7 +36,6 @@ const CrossList = {
      * @param fn 
      */
     walk(root: CrossListNode, fn: (node: CrossListNode) => void) {
-        // todo: if the perf is not good, we can try LinkedList
         queue.push(root);
         while(queue.isEmpty() !== true) {
             let node = queue.shift();
@@ -47,6 +46,26 @@ const CrossList = {
                     queue.push(child);
                 }
                 node = nextSibling;
+            }
+        }
+    },
+
+    /**
+     * walk inside the root, fn is called against root itself and every child of root
+     * @param root 
+     * @param fn 
+     */
+    walkAlongModifiedList(root: CrossListNode, fn: (node: CrossListNode) => void) {
+        queue.push(root);
+        while(queue.isEmpty() !== true) {
+            let node = queue.shift();
+            while(node !== undefined) {
+                fn(node);
+                const {c: child} = node;
+                if (child !== undefined) {
+                    queue.push(child);
+                }
+                node = node.nS;
             }
         }
     }

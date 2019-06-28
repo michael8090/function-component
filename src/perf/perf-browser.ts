@@ -1,10 +1,10 @@
 import * as _ from "lodash";
 import * as process from "process";
-import {createData, updateComponents} from './updateComponents';
+import {init, updateComponents} from './updateComponents';
 
-const n = 500000;
+const n = 50000;
 
-createData(n);
+init(n);
 
 function tick() {
     updateComponents();
@@ -15,7 +15,6 @@ function tick() {
 
 function doBenchmark() {
     const suite = Benchmark.Suite();
-    createData(n);
     updateComponents();
     const title = `update ${n * 2} components`;
     suite

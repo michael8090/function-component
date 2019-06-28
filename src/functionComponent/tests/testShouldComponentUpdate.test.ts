@@ -2,7 +2,7 @@ import {Component, getRoot, toFunctionComponent} from '../functionComponent';
 import {logger} from './testUtils.lib';
 
 it('test should component update', function() {
-    const Root = getRoot({});
+    const {Root} = getRoot({});
     const NeverUpdate = toFunctionComponent(class extends Component<[]> {
         shouldComponentUpdate() {
             return false;
