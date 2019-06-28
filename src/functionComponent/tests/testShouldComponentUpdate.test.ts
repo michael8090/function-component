@@ -10,6 +10,9 @@ it('test should component update', function() {
         componentWillUpdate() {
             throw new Error(`should never update`);
         }
+        componentWillUnmount() {
+            logger.log('NeverUpdate: componentWillUnmount');
+        }
     });
     const AlwaysUpdate = toFunctionComponent(class extends Component<[]> {
         componentWillUpdate() {
@@ -39,4 +42,14 @@ it('test should component update', function() {
 
     logger.clear();
     Root(NeverUpdate);
+
+    logger.clear();
+    Root(() => {
+        //
+    });
+    expect(
+        logger.equals([
+            'NeverUpdate: componentWillUnmount'
+        ])
+    ).toBeTruthy();
 });
