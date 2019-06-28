@@ -257,7 +257,15 @@ export function toFunctionComponent<TData extends any[], TView = {}>
     let f: any;
     // tslint:disable-next-line:no-eval
     eval('f = ' + functionComponent.toString().replace(functionComponent.name, Cls.name + 'FunctionComponent').replace(/ARGS/g, argsString));
+
+    // use the compiled version is 60% faster
+    // and I see when use the original function, there are many "Builtins_CallFunction_ReceiverIsNotNullOrUndefined"
+    // and when use compiled version, they are gone
+    // funny v8...
+    // tslint:disable-next-line:no-eval
+    // eval('f = ' + functionComponent.toString());
     return f;
+    // return functionComponent as any;
 }
 
 function createStackNode() {

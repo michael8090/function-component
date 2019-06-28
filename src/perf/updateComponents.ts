@@ -54,14 +54,14 @@ function UpdateItemsWithMapItems() {
 
 createData(50000);
 
-Root(UpdateItemsWithMapItems);
-// Root(UpdateItems);
+// Root(UpdateItemsWithMapItems);
+Root(UpdateItems);
 
 export function createData(n: number) {
     data = new Array(n).fill(undefined).map(() => ({}));
 }
 
 export function updateComponents() {
-    Root(UpdateItemsWithMapItems);
-    // Root(UpdateItems);
+    // Root(UpdateItemsWithMapItems);
+    Root(UpdateItems);
 }
