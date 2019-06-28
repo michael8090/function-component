@@ -128,7 +128,7 @@ export function toFunctionComponent<TData extends any[], TView = {}>
     (vg: ConstructorOf<Component<TData, TView>>): (...data: TData) => void {
     // const {componentWillMount: componentWillMount, componentWillUpdate: componentWillUpdate, render} = vg;
     const Cls = vg;
-    function functionComponent(ARGS: any) {
+    function functionComponent(MACRO_ARGS: any) {
         // const data = arguments as any as TData;
         // avoid accessing closure
         const currentContext = context;
@@ -160,14 +160,14 @@ export function toFunctionComponent<TData extends any[], TView = {}>
             const instance = currentNode.i!;
             if (instance.__forcedUpdate !== true) {
                 if (instance.shouldComponentUpdate !== undefined) {
-                    isUpdateSkipped = instance.shouldComponentUpdate(ARGS) === false;
+                    isUpdateSkipped = instance.shouldComponentUpdate('MACRO_ARGS') === false;
                 }
             } else {
                 instance.__forcedUpdate = false;
             }
             if (isUpdateSkipped === false) {
                 if (instance.componentWillUpdate !== undefined) {
-                    instance.componentWillUpdate(ARGS);
+                    instance.componentWillUpdate('MACRO_ARGS');
                 }
             }
         } else {
@@ -203,14 +203,14 @@ export function toFunctionComponent<TData extends any[], TView = {}>
             if (isCreate === true) {
                 // create current view
                 // todo: if use currentCls, 3.2ms to 4.8ms
-                const instance = new currentCls(ARGS);
+                const instance = new currentCls('MACRO_ARGS');
                 instance.__stackNode = currentNode;
                 instance.__context = currentContext;
                 if (instance.onInit !== undefined) {
                     instance.onInit(currentContext.parentView);
                 }
                 if (instance.componentWillMount !== undefined) {
-                    (instance.componentWillMount as any)(ARGS);
+                    (instance.componentWillMount as any)('MACRO_ARGS');
                 }
                 currentNode.i = instance;
                 currentNode.C = currentCls;
@@ -229,7 +229,10 @@ export function toFunctionComponent<TData extends any[], TView = {}>
         const currentInstance = currentNode.i!;
         const cachedArgs = currentInstance.cachedArgs as any[];
         
-        // MACRO: CACHE_ARGS
+        // this line will be compiled, don't change any thing inside it.
+        // tslint:disable-next-line:no-unused-expression
+        'MACRO_CACHED_ARGS';
+        // cachedArgs[0] = _0;
 
         if (isUpdateSkipped === false) {
             // done with the node, now for the children
@@ -254,7 +257,7 @@ export function toFunctionComponent<TData extends any[], TView = {}>
                 currentContext.lastNode = lastNodeChild;
         
                 // !!!children enter!!!
-                (currentInstance.render as any)(ARGS);
+                (currentInstance.render as any)('MACRO_ARGS');
                 // !!!children done!!!
                 
                 const preSiblingInCurrentCallStack = currentContext.preSiblingInCurrentCallStack as StackNode | undefined;
@@ -317,9 +320,9 @@ export function toFunctionComponent<TData extends any[], TView = {}>
     // tslint:disable-next-line:prefer-const
     let f: any;
     const newFunctionString = functionComponent.toString()
-        .replace('// MACRO: CACHE_ARGS', cacheArgsString)
-        .replace(functionComponent.name, Cls.name + 'FunctionComponent')
-        .replace(/ARGS/g, argsString);
+        .replace(/('|")MACRO_ARGS('|")/g, argsString)
+        .replace(/('|")MACRO_CACHED_ARGS('|")/g, cacheArgsString)
+        .replace(new RegExp(functionComponent.name + '.*\\)'), `${Cls.name}FunctionComponent(${argsString})`);
     // tslint:disable-next-line:no-eval
     eval('f = ' + newFunctionString);
 
