@@ -10,27 +10,22 @@ const removeCrossListNode = CrossList.remove;
 
 interface ConstructorOf<T> {new (...args: any[]): T}
 
-export class Component<TData extends any[] = any[], TView = {}> {
-    view: TView | undefined;
-    onInit?(parent: TView): void;
-    shouldComponentUpdate?(...data: TData): boolean;
-    componentWillMount?(...data: TData): void;
-    componentWillUpdate?(...data: TData): void;
-    componentWillUnmount?(): void;
-    render?(...data: TData): void;
-}
-
 interface StackNode extends CrossListNode {
     C: ConstructorOf<Component<any, any>>;
     /**
      * component instance
      */
     i?: Component<any, any>;
+    /**
+     * component function
+     */
+    f?: (...data: any[]) => void;
 }
 
 function disposeNode(node: StackNode) {
     const instance = node.i;
     if (instance !== undefined) {
+        instance.__isUnmounted = true;
         if (instance.componentWillUnmount !== undefined) {
             instance.componentWillUnmount();
         }
@@ -80,15 +75,35 @@ interface Context {
 
 let context: Context | undefined;
 
-// const regex = /function.*\((.*)\)/;
-// function getArguments(fn: Function) {
-//     const match = fn.toString().match(regex);
-//     if (match !== null) {
-//         return match[1];
-//     } else {
-//         throw new Error('invalid function');
-//     }
-// }
+export class Component<TData extends any[] = any[], TView = {}> {
+    // tslint:disable-next-line:variable-name
+    __stackNode: StackNode;
+    // tslint:disable-next-line:variable-name
+    __forcedUpdate: boolean;
+    // tslint:disable-next-line:variable-name
+    __isUnmounted: boolean;
+    view: TView | undefined;
+    onInit?(parent: TView): void;
+    shouldComponentUpdate?(...data: TData): boolean;
+    componentWillMount?(...data: TData): void;
+    componentWillUpdate?(...data: TData): void;
+    componentWillUnmount?(): void;
+    render?(...data: TData): void;
+    forceUpdate(...data: TData) {
+        if (this.__isUnmounted === true) {
+            // tslint:disable-next-line:no-console
+            console.error(`trying to update an unmounted component: ${this.constructor.name}`);
+            return;
+        }
+        context = {
+            lastNode: this.__stackNode,
+            lastCallStack: 'fakeStack'
+        } as any as Context;
+        this.__forcedUpdate = true;;
+        this.__stackNode.f!(...data);
+        this.__forcedUpdate = false;;
+    }
+}
 
 export function toFunctionComponent<TData extends any[], TView = {}>
     (vg: ConstructorOf<Component<TData, TView>>): (...data: TData) => void {
@@ -124,7 +139,7 @@ export function toFunctionComponent<TData extends any[], TView = {}>
         if (lastCls! === currentCls) {
             // update
             const instance = currentNode.i!;
-            if (instance.shouldComponentUpdate !== undefined) {
+            if (instance.__forcedUpdate !== true && instance.shouldComponentUpdate !== undefined) {
                 isUpdateSkipped = instance.shouldComponentUpdate(ARGS) === false;
             }
             if (isUpdateSkipped === false) {
@@ -145,6 +160,7 @@ export function toFunctionComponent<TData extends any[], TView = {}>
                 // dispose last view and create current view
                 removeCrossListNode(lastNode!, currentContext.parentInCurrentCallStack!, currentContext.preSiblingInCurrentCallStack);
                 const instance = lastNode!.i!;
+                instance.__isUnmounted = true;
                 if (instance.componentWillUnmount !== undefined) {
                     instance.componentWillUnmount();
                 }
@@ -163,6 +179,7 @@ export function toFunctionComponent<TData extends any[], TView = {}>
                 // create current view
                 // todo: if use currentCls, 3.2ms to 4.8ms
                 const instance = new currentCls(ARGS);
+                instance.__stackNode = currentNode;
                 if (instance.onInit !== undefined) {
                     instance.onInit(currentContext.parentView);
                 }
@@ -173,6 +190,7 @@ export function toFunctionComponent<TData extends any[], TView = {}>
                 currentNode.C = currentCls;
                 currentNode.nS = undefined;
                 currentNode.c = undefined;
+                currentNode.f = f;
                 // currentNode.qn = undefined;
     
                 if (currentContext.parentInCurrentCallStack !== undefined) {
