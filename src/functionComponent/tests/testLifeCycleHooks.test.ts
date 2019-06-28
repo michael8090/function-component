@@ -1,158 +1,231 @@
-import {Components} from '../Components';
-import {getRoot} from '../functionComponent';
-import { getLoggerFunctionComponent, logger } from './testUtils.lib';
+import { Components } from "../Components";
+import { getRoot } from "../functionComponent";
+import { getLoggerFunctionComponent, logger } from "./testUtils.lib";
 
-const {Null} =Components;
+const { Null } = Components;
 
+const Root = getRoot({});
+const A = getLoggerFunctionComponent("A");
+const B = getLoggerFunctionComponent("B");
 
-describe('test react liked lifecycle hooks', function() {
-    const Root = getRoot({});
-    const A = getLoggerFunctionComponent('A');
-    const B = getLoggerFunctionComponent('B');
+describe("test react liked lifecycle hooks", function() {
     Root(Null);
-    it('basic: componentWillMount - componentWillUpdate - componentWillUnmount', () => {
+    it("basic: componentWillMount - componentWillUpdate - componentWillUnmount", () => {
         logger.clear();
-        Root(A)
-        expect(logger.equals([
-            'A: componentWillMount'
-        ])).toBeTruthy();
         Root(A);
-        expect(logger.equals([
-            'A: componentWillMount',
-            'A: componentWillUpdate'
-        ])).toBeTruthy();
+        expect(logger.equals(["A: componentWillMount"])).toBeTruthy();
+        Root(A);
+        expect(
+            logger.equals(["A: componentWillMount", "A: componentWillUpdate"])
+        ).toBeTruthy();
         Root(Null);
-        expect(logger.equals([
-            'A: componentWillMount',
-            'A: componentWillUpdate',
-            'A: componentWillUnmount',
-        ])).toBeTruthy();
+        expect(
+            logger.equals([
+                "A: componentWillMount",
+                "A: componentWillUpdate",
+                "A: componentWillUnmount"
+            ])
+        ).toBeTruthy();
     });
 
-    it('Component type change should cause an unmount and mount', () =>{
+    it("Component type change should cause an unmount and mount", () => {
         logger.clear();
         Root(Null);
         Root(A);
-        expect(logger.equals([
-            'A: componentWillMount'
-        ])).toBeTruthy();
+        expect(logger.equals(["A: componentWillMount"])).toBeTruthy();
         Root(B);
-        expect(logger.equals([
-            'A: componentWillMount',
-            'A: componentWillUnmount',
-            'B: componentWillMount',
-        ])).toBeTruthy();
+        expect(
+            logger.equals([
+                "A: componentWillMount",
+                "A: componentWillUnmount",
+                "B: componentWillMount"
+            ])
+        ).toBeTruthy();
     });
 
-    it('simple nested components', () =>{
+    it("simple nested components", () => {
         logger.clear();
         Root(Null);
         Root(A);
-        expect(logger.equals([
-            'A: componentWillMount'
-        ])).toBeTruthy();
+        expect(logger.equals(["A: componentWillMount"])).toBeTruthy();
         logger.clear();
         Root(() => {
             A(() => {
                 B();
-            })
+            });
         });
-        expect(logger.equals([
-            'A: componentWillUpdate',
-            'B: componentWillMount',
-        ])).toBeTruthy();
+        expect(
+            logger.equals(["A: componentWillUpdate", "B: componentWillMount"])
+        ).toBeTruthy();
         logger.clear();
         Root(() => {
             A();
         });
-        expect(logger.equals([
-            'A: componentWillUpdate',
-            'B: componentWillUnmount',
-        ])).toBeTruthy();
+        expect(
+            logger.equals(["A: componentWillUpdate", "B: componentWillUnmount"])
+        ).toBeTruthy();
     });
 
-    it('two nested components', () =>{
+    it("two nested components", () => {
         logger.clear();
         Root(Null);
         Root(() => {
             A(() => {
                 B();
-            })
+            });
         });
-        expect(logger.equals([
-            'A: componentWillMount',
-            'B: componentWillMount',
-        ])).toBeTruthy();
+        expect(
+            logger.equals(["A: componentWillMount", "B: componentWillMount"])
+        ).toBeTruthy();
         logger.clear();
         Root(() => {
             A(() => {
                 A();
                 B();
-            })
+            });
         });
-        expect(logger.equals([
-            'A: componentWillUpdate',
-            'B: componentWillUnmount',
-            'A: componentWillMount',
-            'B: componentWillMount',
-        ])).toBeTruthy();
+        expect(
+            logger.equals([
+                "A: componentWillUpdate",
+                "B: componentWillUnmount",
+                "A: componentWillMount",
+                "B: componentWillMount"
+            ])
+        ).toBeTruthy();
 
         logger.clear();
         Root(() => {
             A(() => {
                 A();
                 B();
-            })
+            });
             A(() => {
                 A();
                 B();
-            })
+            });
         });
-        expect(logger.equals([
-            'A: componentWillUpdate',
-            'A: componentWillUpdate',
-            'B: componentWillUpdate',
-            'A: componentWillMount',
-            'A: componentWillMount',
-            'B: componentWillMount',
-        ])).toBeTruthy();
+        expect(
+            logger.equals([
+                "A: componentWillUpdate",
+                "A: componentWillUpdate",
+                "B: componentWillUpdate",
+                "A: componentWillMount",
+                "A: componentWillMount",
+                "B: componentWillMount"
+            ])
+        ).toBeTruthy();
 
         logger.clear();
         Root(() => {
             A(() => {
                 A();
                 B();
-            })
+            });
             A(() => {
                 A();
                 B();
-            })
+            });
         });
-        expect(logger.equals([
-            'A: componentWillUpdate',
-            'A: componentWillUpdate',
-            'B: componentWillUpdate',
-            'A: componentWillUpdate',
-            'A: componentWillUpdate',
-            'B: componentWillUpdate',
-        ])).toBeTruthy();
+        expect(
+            logger.equals([
+                "A: componentWillUpdate",
+                "A: componentWillUpdate",
+                "B: componentWillUpdate",
+                "A: componentWillUpdate",
+                "A: componentWillUpdate",
+                "B: componentWillUpdate"
+            ])
+        ).toBeTruthy();
 
         logger.clear();
         Root(() => {
             A(() => {
                 A();
                 B();
-            })
+            });
         });
-        expect(logger.equals([
-            'A: componentWillUpdate',
-            'A: componentWillUpdate',
-            'B: componentWillUpdate',
-            'A: componentWillUnmount',
-            'A: componentWillUnmount',
-            'B: componentWillUnmount',
-        ])).toBeTruthy();
+        expect(
+            logger.equals([
+                "A: componentWillUpdate",
+                "A: componentWillUpdate",
+                "B: componentWillUpdate",
+                "A: componentWillUnmount",
+                "A: componentWillUnmount",
+                "B: componentWillUnmount"
+            ])
+        ).toBeTruthy();
+    });
+
+    it("1 - 2 - 1 - 2 - 1", function() {
+        logger.clear();
+        Root(() => {
+            A(() => {
+                A();
+            });
+        });
+        expect(
+            logger.equals([
+                "A: componentWillMount",
+                "A: componentWillMount",
+            ])
+        ).toBeTruthy();
+
+        logger.clear();
+        Root(() => {
+            A(() => {
+                A();
+                A();
+            });
+        });
+        expect(
+            logger.equals([
+                "A: componentWillUpdate",
+                "A: componentWillUpdate",
+                "A: componentWillMount"
+            ])
+        ).toBeTruthy();
+
+        logger.clear();
+        Root(() => {
+            A(() => {
+                A();
+            });
+        });
+        expect(
+            logger.equals([
+                "A: componentWillUpdate",
+                "A: componentWillUpdate",
+                "A: componentWillUnmount"
+            ])
+        ).toBeTruthy();
+
+        logger.clear();
+        Root(() => {
+            A(() => {
+                A();
+                A();
+            });
+        });
+        expect(
+            logger.equals([
+                "A: componentWillUpdate",
+                "A: componentWillUpdate",
+                "A: componentWillMount"
+            ])
+        ).toBeTruthy();
+
+        logger.clear();
+        Root(() => {
+            A(() => {
+                A();
+            });
+        });
+        expect(
+            logger.equals([
+                "A: componentWillUpdate",
+                "A: componentWillUpdate",
+                "A: componentWillUnmount"
+            ])
+        ).toBeTruthy();
     });
 });
-
-  
