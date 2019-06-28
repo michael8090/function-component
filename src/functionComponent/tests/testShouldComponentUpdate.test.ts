@@ -1,4 +1,3 @@
-import {Components} from '../Components';
 import {Component, getRoot, toFunctionComponent} from '../functionComponent';
 import {logger} from './testUtils.lib';
 
