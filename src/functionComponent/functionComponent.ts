@@ -119,12 +119,18 @@ export function toFunctionComponent<TData extends any[], TView = {}>
             currentNode = currentContext.memoryPool.get();
         }
 
+        let isUpdateSkipped = false;
 
         if (lastCls! === currentCls) {
             // update
             const instance = currentNode.i!;
-            if (instance.componentWillUpdate !== undefined) {
-                instance.componentWillUpdate(ARGS);
+            if (instance.shouldComponentUpdate !== undefined) {
+                isUpdateSkipped = instance.shouldComponentUpdate(ARGS) === false;
+            }
+            if (isUpdateSkipped === false) {
+                if (instance.componentWillUpdate !== undefined) {
+                    instance.componentWillUpdate(ARGS);
+                }
             }
         } else {
             let isCreate = false;
@@ -174,49 +180,51 @@ export function toFunctionComponent<TData extends any[], TView = {}>
                     addCrossListNode(currentNode, currentContext.parentInCurrentCallStack, currentContext.preSiblingInCurrentCallStack);
                 }
             }
-        } 
+        }
 
-        // done with the node, now for the children
+        if (isUpdateSkipped === false) {
+            // done with the node, now for the children
 
-        const currentInstance = currentNode.i!;
+            const currentInstance = currentNode.i!;
 
-        if (currentInstance.render !== undefined) {
-            const parentViewBackup = currentContext.parentView;
-            const parentInCurrentCallStackBackup = currentContext.parentInCurrentCallStack;
-    
-            const view = currentInstance.view;
-            if (view !== undefined) {
-                currentContext.parentView = view;
-            }
-    
-            currentContext.parentInCurrentCallStack = currentNode;
-            
-            currentContext.preSiblingInCurrentCallStack = undefined;
-
-            // const lastNodeChild = lastNode && lastNode.c;
-            // it's the same as above one
-            const lastNodeChild = currentNode.c;
-
-            currentContext.lastNode = lastNodeChild;
-    
-            // !!!children enter!!!
-            (currentInstance.render as any)(ARGS);
-            // !!!children done!!!
-            
-            const preSiblingInCurrentCallStack = currentContext.preSiblingInCurrentCallStack as StackNode | undefined;
-            if (preSiblingInCurrentCallStack !== undefined) {
-                const nodeToBeDisposed = preSiblingInCurrentCallStack.nS;
-                if (nodeToBeDisposed !== undefined) {
-                    walkCrossListNode(nodeToBeDisposed, disposeNode);
-                    preSiblingInCurrentCallStack.nS = undefined;
+            if (currentInstance.render !== undefined) {
+                const parentViewBackup = currentContext.parentView;
+                const parentInCurrentCallStackBackup = currentContext.parentInCurrentCallStack;
+        
+                const view = currentInstance.view;
+                if (view !== undefined) {
+                    currentContext.parentView = view;
                 }
-            } else if (lastNodeChild !== undefined) {
-                lastNode!.c = undefined;
-                walkCrossListNode(lastNodeChild, disposeNode);
-            }
+        
+                currentContext.parentInCurrentCallStack = currentNode;
+                
+                currentContext.preSiblingInCurrentCallStack = undefined;
 
-            currentContext.parentView = parentViewBackup;
-            currentContext.parentInCurrentCallStack = parentInCurrentCallStackBackup;
+                // const lastNodeChild = lastNode && lastNode.c;
+                // it's the same as above one
+                const lastNodeChild = currentNode.c;
+
+                currentContext.lastNode = lastNodeChild;
+        
+                // !!!children enter!!!
+                (currentInstance.render as any)(ARGS);
+                // !!!children done!!!
+                
+                const preSiblingInCurrentCallStack = currentContext.preSiblingInCurrentCallStack as StackNode | undefined;
+                if (preSiblingInCurrentCallStack !== undefined) {
+                    const nodeToBeDisposed = preSiblingInCurrentCallStack.nS;
+                    if (nodeToBeDisposed !== undefined) {
+                        walkCrossListNode(nodeToBeDisposed, disposeNode);
+                        preSiblingInCurrentCallStack.nS = undefined;
+                    }
+                } else if (lastNodeChild !== undefined) {
+                    lastNode!.c = undefined;
+                    walkCrossListNode(lastNodeChild, disposeNode);
+                }
+
+                currentContext.parentView = parentViewBackup;
+                currentContext.parentInCurrentCallStack = parentInCurrentCallStackBackup;
+            }
         }
 
         /** set the layer variables */
