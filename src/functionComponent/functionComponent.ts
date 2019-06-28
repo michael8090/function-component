@@ -119,59 +119,62 @@ export function toFunctionComponent<TData extends any[], TView = {}>
             currentNode = currentContext.memoryPool.get();
         }
 
-        let isCreate = false;
 
         if (lastCls! === currentCls) {
             // update
-            const instance = currentNode.i;
-            if (instance!.componentWillUpdate !== undefined) {
-                instance!.componentWillUpdate(ARGS);
+            const instance = currentNode.i!;
+            if (instance.componentWillUpdate !== undefined) {
+                instance.componentWillUpdate(ARGS);
             }
-        } else if (lastCls! === undefined) {
-            if (currentContext.lastCallStack === undefined) {
-                // create currentStack
-                currentContext.lastCallStack = currentNode;
-            }
-            isCreate = true;
         } else {
-            // dispose last view and create current view
-            removeCrossListNode(lastNode!, currentContext.parentInCurrentCallStack!, currentContext.preSiblingInCurrentCallStack);
-            const instance = lastNode!.i!;
-            if (instance.componentWillUnmount !== undefined) {
-                instance.componentWillUnmount();
-            }
-            const lastNodeChild = lastNode!.c;
-            lastNode!.c = undefined;
-            if (lastNodeChild !== undefined) {
-                walkCrossListNode(lastNodeChild, disposeNode);
-            }
-            // the node is completely gone and we'll not visit its child
+            let isCreate = false;
 
-
-            isCreate = true;
-        }
-
-        if (isCreate === true) {
-            // create current view
-            // todo: if use currentCls, 3.2ms to 4.8ms
-            const instance = new currentCls(ARGS);
-            if (instance.onInit !== undefined) {
-                instance.onInit(currentContext.parentView);
+            if (lastCls! === undefined) {
+                if (currentContext.lastCallStack === undefined) {
+                    // create currentStack
+                    currentContext.lastCallStack = currentNode;
+                }
+                isCreate = true;
+            } else {
+                // dispose last view and create current view
+                removeCrossListNode(lastNode!, currentContext.parentInCurrentCallStack!, currentContext.preSiblingInCurrentCallStack);
+                const instance = lastNode!.i!;
+                if (instance.componentWillUnmount !== undefined) {
+                    instance.componentWillUnmount();
+                }
+                const lastNodeChild = lastNode!.c;
+                lastNode!.c = undefined;
+                if (lastNodeChild !== undefined) {
+                    walkCrossListNode(lastNodeChild, disposeNode);
+                }
+                // the node is completely gone and we'll not visit its child
+    
+    
+                isCreate = true;
             }
-            if (instance.componentWillMount !== undefined) {
-                (instance.componentWillMount as any)(ARGS);
-            }
-            currentNode.i = instance;
-            currentNode.C = currentCls;
-            currentNode.nS = undefined;
-            currentNode.c = undefined;
-            currentNode.qn = undefined;
 
-            if (currentContext.parentInCurrentCallStack !== undefined) {
-                // add the currentNode to the currentCallStack
-                addCrossListNode(currentNode, currentContext.parentInCurrentCallStack, currentContext.preSiblingInCurrentCallStack);
+            if (isCreate === true) {
+                // create current view
+                // todo: if use currentCls, 3.2ms to 4.8ms
+                const instance = new currentCls(ARGS);
+                if (instance.onInit !== undefined) {
+                    instance.onInit(currentContext.parentView);
+                }
+                if (instance.componentWillMount !== undefined) {
+                    (instance.componentWillMount as any)(ARGS);
+                }
+                currentNode.i = instance;
+                currentNode.C = currentCls;
+                currentNode.nS = undefined;
+                currentNode.c = undefined;
+                // currentNode.qn = undefined;
+    
+                if (currentContext.parentInCurrentCallStack !== undefined) {
+                    // add the currentNode to the currentCallStack
+                    addCrossListNode(currentNode, currentContext.parentInCurrentCallStack, currentContext.preSiblingInCurrentCallStack);
+                }
             }
-        }
+        } 
 
         // done with the node, now for the children
 
