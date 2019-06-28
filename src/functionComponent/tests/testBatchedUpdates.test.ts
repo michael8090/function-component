@@ -80,4 +80,22 @@ it('test forceUpdate', function() {
             'AlwaysUpdate2: componentWillUpdate',
         ])
     ).toBeTruthy();
+
+    Root(() => {
+        AlwaysUpdate1(c => c1 = c, () => {
+            AlwaysUpdate2(c => c3 = c);
+        });
+    });
+    
+    logger.clear();
+    batchedUpdates(() => {
+        c3.forceUpdate();
+        c1.forceUpdate();
+    });
+    expect(
+        logger.equals([
+            'AlwaysUpdate1: componentWillUpdate',
+            'AlwaysUpdate2: componentWillUpdate',
+        ])
+    ).toBeTruthy();
 });
