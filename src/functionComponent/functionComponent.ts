@@ -124,6 +124,10 @@ export class Component<TData extends any[] = any[], TView = {}> {
     }
 }
 
+function MACRO_GET_VARIABLE_NAME(...args: any[]) {
+    //
+}
+
 export function toFunctionComponent<TData extends any[], TView = {}>
     (vg: ConstructorOf<Component<TData, TView>>): (...data: TData) => void {
     // const {componentWillMount: componentWillMount, componentWillUpdate: componentWillUpdate, render} = vg;
@@ -227,12 +231,9 @@ export function toFunctionComponent<TData extends any[], TView = {}>
         }
 
         const currentInstance = currentNode.i!;
-        const cachedArgs = currentInstance.cachedArgs as any[];
         
         // this line will be compiled, don't change any thing inside it.
-        // tslint:disable-next-line:no-unused-expression
-        'MACRO_CACHED_ARGS';
-        // cachedArgs[0] = _0;
+        MACRO_GET_VARIABLE_NAME(currentInstance)
 
         if (isUpdateSkipped === false) {
             // done with the node, now for the children
@@ -309,20 +310,36 @@ export function toFunctionComponent<TData extends any[], TView = {}>
 
     // avoid name collision
     const ars: string[] = [];
-    const cacheArgs: string[] = [];
     for (let i = 0; i < argsCount; i++) {
         ars.push('_' + i);
-        cacheArgs.push(`(cachedArgs[${i}] !== ${'_'+i}) && (cachedArgs[${i}] = ${'_'+i});`);
     }
     const argsString = ars.join(',');
-    const cacheArgsString = cacheArgs.join('\n');
+
+    // this is for compiled code
+    // tslint:disable-next-line:prefer-const
+    let cachedArgs: any;
+
+    function compileSetCachedStrings(cacheArgsVariableString: string) {
+        cacheArgsVariableString = cacheArgsVariableString.replace(/[^a-zA-Z0-9_$]|\n|\s/g, '');
+        const ss: string[] = [];
+        for (let i = 0; i < argsCount; i++) {
+            ss.push(`(cachedArgs[${i}] !== ${'_'+i}) && (cachedArgs[${i}] = ${'_'+i})`);
+        }
+        // make sure it's an expression
+        if (ss.length === 0) {
+            return 'cachedArgs';
+        }
+        return `(cachedArgs = ${cacheArgsVariableString}.cachedArgs,${ss.join(',')})`;
+    }
 
     // tslint:disable-next-line:prefer-const
     let f: any;
-    const newFunctionString = functionComponent.toString()
-        .replace(/('|")MACRO_ARGS('|")/g, argsString)
-        .replace(/('|")MACRO_CACHED_ARGS('|")/g, cacheArgsString)
-        .replace(new RegExp(functionComponent.name + '.*\\)'), `${Cls.name}FunctionComponent(${argsString})`);
+    const originalFunctionString = functionComponent.toString();
+    const cachedArgsVariableString = originalFunctionString.match(/MACRO_GET_VARIABLE_NAME\(([a-zA-Z0-9_$]+)\)/)![1];
+    const newFunctionString = originalFunctionString
+        .replace(/['"]MACRO_ARGS['"]/g, argsString)
+        .replace(/MACRO_GET_VARIABLE_NAME\(([a-zA-Z0-9_$]+)\)/, compileSetCachedStrings(cachedArgsVariableString))
+        .replace(new RegExp(functionComponent.name + '[^{]*{'), `${Cls.name}FunctionComponent(${argsString}){`);
     // tslint:disable-next-line:no-eval
     eval('f = ' + newFunctionString);
 
