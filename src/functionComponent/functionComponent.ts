@@ -310,10 +310,20 @@ export function toFunctionComponent<TData extends any[], TView = {}>
         /** done setting the layer variables */
     }
 
+    // shouldComponentUpdate?(...data: TData): boolean;
+    // componentWillMount?(...data: TData): void;
+    // componentWillUpdate?(...data: TData): void;
+    // componentWillUnmount?(): void;
+    // componentDidUpdate?(...data: TData): void;
+    // componentDidMount?(...data: TData): void;
+    // render?(...data: TData): void;
+
     const hooks = [
         'shouldComponentUpdate',
         'componentWillMount',
         'componentWillUpdate',
+        'componentDidUpdate',
+        'componentDidMount',
         'render'
     ];
 
