@@ -1,12 +1,13 @@
 import {init, updateComponents} from './updateComponents';
 
-const t0 = Date.now();
-const itemsCount = 500000;
+const itemsCount = 50000;
 const n = 100;
-let count = 100;
 
 init(itemsCount);
 
+const t0 = Date.now();
+
+let count = n;
 while(count--) {
     updateComponents();
 }
