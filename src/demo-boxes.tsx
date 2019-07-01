@@ -279,7 +279,7 @@ function UpdateBoxes() {
         // });
 
         // fastest, 10000 boxes at stable 17fps
-        Box(data);
+        // Box(data);
 
         // nested
         // Box(data, undefined, () => {
