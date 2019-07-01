@@ -46,14 +46,16 @@ function renderDummy() {
 }
 
 function UpdateItemsWithMapItems() {
-    MapItems(
-        //
-        data,
-        //
-        getKey,
-        //
-        renderDummy
-    );
+    Dummy(() => {
+        MapItems(
+            //
+            data,
+            //
+            getKey,
+            //
+            renderDummy
+        );
+    });
 }
 
 function UpdateItemsWithBatchedUpdates() {
@@ -70,8 +72,8 @@ function createData(n: number) {
 
 export function init(n: number) {
     createData(n);
-    // Root(UpdateItemsWithMapItems);
-    Root(UpdateItems);
+    Root(UpdateItemsWithMapItems);
+    // Root(UpdateItems);
 }
 
 export function updateComponents() {

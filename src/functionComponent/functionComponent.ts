@@ -1,5 +1,6 @@
 import { CrossList as CL, CrossListNode } from './CrossLinkedList';
 import { MemoryPool } from './MemoryPool';
+import { Queue } from './Queue';
 
 // accessing a Module Symbol has overhead
 const CrossList = CL;
@@ -57,6 +58,7 @@ interface Context {
      */
     memoryPool: MemoryPool;
     isBatchedUpdate: boolean;
+    skippedNodes?: Queue<StackNode>;
     // root variables definition end
 
     // the variables shared inside a layer of a subtree
@@ -114,13 +116,14 @@ export class Component<TData extends any[] = any[], TView = {}> {
             return;
         }
         const {cachedArgs, __context} = this;
+        const contextBackup = context;
         context = __context!;
 
         context.lastNode = this.__stackNode;
 
         this.__forcedUpdate = true;
         this.__stackNode.f!.apply(null, cachedArgs);
-        context = undefined;
+        context = contextBackup;
     }
 }
 
@@ -276,6 +279,14 @@ export function toFunctionComponent<TData extends any[], TView = {}>
                 currentContext.parentView = parentViewBackup;
                 currentContext.parentInCurrentCallStack = parentInCurrentCallStackBackup;
             }
+        } else {
+            const {skippedNodes} = currentContext;
+            if (skippedNodes !== undefined) {
+                const currentChild = currentNode.c;
+                if (currentChild !== undefined) {
+                    skippedNodes.push(currentChild);
+                }
+            }
         }
 
         /** set the layer variables */
@@ -388,9 +399,14 @@ export function getRoot<T>(rootView: T) {
     function forceUpdate(node: StackNode) {
         const instance = node.i!;
         if (instance.__forcedUpdate === true) {
-            instance.forceUpdate();
+            context!.lastNode = instance.__stackNode;
+            instance.__stackNode.f!.apply(null, instance.cachedArgs);
+            return false;
         }
+        return true;
     }
+
+    const cachedQueue = new Queue<StackNode>();
 
     return ({
         Root(child: Function) {
@@ -410,12 +426,16 @@ export function getRoot<T>(rootView: T) {
             context.isBatchedUpdate = true;
             fn();
             context.isBatchedUpdate = false;
-            context = undefined;
 
-            const {lastCallStack} = cachedContext;
+            const nodesToBeTraversed = cachedQueue;
+            nodesToBeTraversed.reset();
+            context.skippedNodes = nodesToBeTraversed;
+            const {lastCallStack} = context;
             if (lastCallStack !== undefined) {
-                walkModifiedCrossListNode(lastCallStack, forceUpdate)
+                walkModifiedCrossListNode(nodesToBeTraversed, lastCallStack, forceUpdate);
             }
+            context.skippedNodes = undefined;
+            context = undefined;
         }
     });
 }

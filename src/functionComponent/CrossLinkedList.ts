@@ -55,15 +55,17 @@ const CrossList = {
      * @param root 
      * @param fn 
      */
-    walkAlongModifiedList(root: CrossListNode, fn: (node: CrossListNode) => void) {
-        queue.push(root);
-        while(queue.isEmpty() !== true) {
-            let node = queue.shift();
+    walkAlongModifiedList(q: Queue<CrossListNode>, root: CrossListNode, fn: (node: CrossListNode) => boolean) {
+        q.push(root);
+        while(q.isEmpty() !== true) {
+            let node = q.shift();
             while(node !== undefined) {
-                fn(node);
-                const {c: child} = node;
-                if (child !== undefined) {
-                    queue.push(child);
+                const skipChild = fn(node) === false;
+                if (skipChild === false) {
+                    const {c: child} = node;
+                    if (child !== undefined) {
+                        q.push(child);
+                    }
                 }
                 node = node.nS;
             }

@@ -67,7 +67,7 @@ export class BiDirectionLinkedList<T extends BiDirectionLinkedListNode> {
             cb(head as T);
             head = next;
         }
-        if (tail) {
+        if (tail !== undefined) {
             cb(tail as T);
         }
     }

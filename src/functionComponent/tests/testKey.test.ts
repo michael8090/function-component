@@ -30,4 +30,11 @@ it('test react liked lifecycle hooks', function() {
             A(key);
         });
     });
+
+    data.pop();
+    Root(() => {
+        MapItems(data, key => key, key => {
+            A(key);
+        });
+    });
 });
