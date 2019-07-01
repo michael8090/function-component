@@ -104,6 +104,8 @@ export class Component<TData extends any[] = any[], TView = {}> {
     componentWillMount?(...data: TData): void;
     componentWillUpdate?(...data: TData): void;
     componentWillUnmount?(): void;
+    componentDidUpdate?(...data: TData): void;
+    componentDidMount?(...data: TData): void;
     render?(...data: TData): void;
     forceUpdate() {
         if (this.__isUnmounted === true) {
@@ -161,6 +163,7 @@ export function toFunctionComponent<TData extends any[], TView = {}>
         }
 
         let isUpdateSkipped = false;
+        let isMount = false;
 
         if (lastCls! === currentCls) {
             // update
@@ -208,6 +211,7 @@ export function toFunctionComponent<TData extends any[], TView = {}>
             }
 
             if (isCreate === true) {
+                isMount = true;
                 // create current view
                 // todo: if use currentCls, 3.2ms to 4.8ms
                 const instance = new currentCls('MACRO_ARGS');
@@ -279,6 +283,10 @@ export function toFunctionComponent<TData extends any[], TView = {}>
                 currentContext.parentView = parentViewBackup;
                 currentContext.parentInCurrentCallStack = parentInCurrentCallStackBackup;
             }
+
+            if (currentInstance.componentDidUpdate !== undefined) {
+                currentInstance.componentDidUpdate.apply(currentInstance, currentInstance.cachedArgs);
+            }
         } else {
             const {skippedNodes} = currentContext;
             if (skippedNodes !== undefined) {
@@ -286,6 +294,12 @@ export function toFunctionComponent<TData extends any[], TView = {}>
                 if (currentChild !== undefined) {
                     skippedNodes.push(currentChild);
                 }
+            }
+        }
+
+        if (isMount) {
+            if (currentInstance.componentDidMount !== undefined) {
+                currentInstance.componentDidMount.apply(currentInstance, currentInstance.cachedArgs);
             }
         }
 

@@ -22,6 +22,12 @@ export function getLoggerFunctionComponent(name: string) {
         componentWillMount() {
             logger.log(`${name}: componentWillMount`);
         }
+        componentDidMount() {
+            logger.log(`${name}: componentDidMount`);
+        }
+        componentDidUpdate() {
+            logger.log(`${name}: componentDidUpdate`);
+        }
         componentWillUnmount() {
             logger.log(`${name}: componentWillUnmount`);
 

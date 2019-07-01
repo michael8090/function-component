@@ -20,7 +20,8 @@ it('test forceUpdate', function() {
             getRef(this);
         }
     });
-    const AlwaysUpdate = toFunctionComponent(class extends Component<[GetRef]> {
+    // tslint:disable-next-line:no-shadowed-variable
+    const AlwaysUpdate = toFunctionComponent(class AlwaysUpdate extends Component<[GetRef]> {
         componentWillUpdate(getRef: GetRef) {
             logger.log('AlwaysUpdate: componentWillUpdate');
         }
@@ -70,10 +71,20 @@ it('test forceUpdate', function() {
     Root(() => {
         //
     });
+    // tslint:disable-next-line:no-console
+    const oldConsoleError = console.error;
+    // tslint:disable-next-line:no-console
+    console.error = (msg: string) => {
+        logger.log(msg);
+    }
     iAU!.forceUpdate();
     expect(
-        logger.equals([])
+        logger.equals([
+            'trying to update an unmounted component: AlwaysUpdate'
+        ])
     ).toBeTruthy();
+    // tslint:disable-next-line:no-console
+    console.error = oldConsoleError;
 
     logger.clear();
     Root(() => NeverUpdate(setINU));

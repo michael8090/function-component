@@ -13,16 +13,23 @@ describe("test react liked lifecycle hooks", function() {
     it("basic: componentWillMount - componentWillUpdate - componentWillUnmount", () => {
         logger.clear();
         Root(A);
-        expect(logger.equals(["A: componentWillMount"])).toBeTruthy();
+        expect(logger.equals([
+            "A: componentWillMount",
+            "A: componentDidMount",
+        ])).toBeTruthy();
         Root(A);
+
+        logger.clear();
         expect(
-            logger.equals(["A: componentWillMount", "A: componentWillUpdate"])
+            logger.equals([
+                "A: componentWillUpdate",
+            ])
         ).toBeTruthy();
+
+        logger.clear();
         Root(Null);
         expect(
             logger.equals([
-                "A: componentWillMount",
-                "A: componentWillUpdate",
                 "A: componentWillUnmount"
             ])
         ).toBeTruthy();
@@ -32,13 +39,18 @@ describe("test react liked lifecycle hooks", function() {
         logger.clear();
         Root(Null);
         Root(A);
-        expect(logger.equals(["A: componentWillMount"])).toBeTruthy();
+        expect(logger.equals([
+            "A: componentWillMount",
+            "A: componentDidMount",
+        ])).toBeTruthy();
+
+        logger.clear();
         Root(B);
         expect(
             logger.equals([
-                "A: componentWillMount",
                 "A: componentWillUnmount",
-                "B: componentWillMount"
+                "B: componentWillMount",
+                "B: componentDidMount",
             ])
         ).toBeTruthy();
     });
@@ -47,7 +59,11 @@ describe("test react liked lifecycle hooks", function() {
         logger.clear();
         Root(Null);
         Root(A);
-        expect(logger.equals(["A: componentWillMount"])).toBeTruthy();
+        expect(logger.equals([
+            "A: componentWillMount",
+            "A: componentDidMount",
+        ])).toBeTruthy();
+
         logger.clear();
         Root(() => {
             A(() => {
@@ -55,14 +71,24 @@ describe("test react liked lifecycle hooks", function() {
             });
         });
         expect(
-            logger.equals(["A: componentWillUpdate", "B: componentWillMount"])
+            logger.equals([
+                "A: componentWillUpdate",
+                "A: componentDidUpdate",
+                "B: componentWillMount",
+                "B: componentDidMount",
+            ])
         ).toBeTruthy();
+
         logger.clear();
         Root(() => {
             A();
         });
         expect(
-            logger.equals(["A: componentWillUpdate", "B: componentWillUnmount"])
+            logger.equals([
+                "A: componentWillUpdate",
+                "A: componentDidUpdate",
+                "B: componentWillUnmount"
+            ])
         ).toBeTruthy();
     });
 
@@ -75,7 +101,12 @@ describe("test react liked lifecycle hooks", function() {
             });
         });
         expect(
-            logger.equals(["A: componentWillMount", "B: componentWillMount"])
+            logger.equals([
+                "A: componentWillMount",
+                "A: componentDidMount",
+                "B: componentWillMount",
+                "B: componentDidMount",
+            ])
         ).toBeTruthy();
         logger.clear();
         Root(() => {
@@ -87,9 +118,12 @@ describe("test react liked lifecycle hooks", function() {
         expect(
             logger.equals([
                 "A: componentWillUpdate",
+                "A: componentDidUpdate",
                 "B: componentWillUnmount",
                 "A: componentWillMount",
-                "B: componentWillMount"
+                "A: componentDidMount",
+                "B: componentWillMount",
+                "B: componentDidMount",
             ])
         ).toBeTruthy();
 
@@ -107,11 +141,17 @@ describe("test react liked lifecycle hooks", function() {
         expect(
             logger.equals([
                 "A: componentWillUpdate",
+                "A: componentDidUpdate",
                 "A: componentWillUpdate",
+                "A: componentDidUpdate",
                 "B: componentWillUpdate",
+                "B: componentDidUpdate",
                 "A: componentWillMount",
+                "A: componentDidMount",
                 "A: componentWillMount",
-                "B: componentWillMount"
+                "A: componentDidMount",
+                "B: componentWillMount",
+                "B: componentDidMount",
             ])
         ).toBeTruthy();
 
@@ -129,11 +169,17 @@ describe("test react liked lifecycle hooks", function() {
         expect(
             logger.equals([
                 "A: componentWillUpdate",
+                "A: componentDidUpdate",
                 "A: componentWillUpdate",
+                "A: componentDidUpdate",
                 "B: componentWillUpdate",
+                "B: componentDidUpdate",
                 "A: componentWillUpdate",
+                "A: componentDidUpdate",
                 "A: componentWillUpdate",
-                "B: componentWillUpdate"
+                "A: componentDidUpdate",
+                "B: componentWillUpdate",
+                "B: componentDidUpdate",
             ])
         ).toBeTruthy();
 
@@ -147,8 +193,11 @@ describe("test react liked lifecycle hooks", function() {
         expect(
             logger.equals([
                 "A: componentWillUpdate",
+                "A: componentDidUpdate",
                 "A: componentWillUpdate",
+                "A: componentDidUpdate",
                 "B: componentWillUpdate",
+                "B: componentDidUpdate",
                 "A: componentWillUnmount",
                 "A: componentWillUnmount",
                 "B: componentWillUnmount"
@@ -166,7 +215,9 @@ describe("test react liked lifecycle hooks", function() {
         expect(
             logger.equals([
                 "A: componentWillMount",
+                "A: componentDidMount",
                 "A: componentWillMount",
+                "A: componentDidMount",
             ])
         ).toBeTruthy();
 
@@ -180,8 +231,11 @@ describe("test react liked lifecycle hooks", function() {
         expect(
             logger.equals([
                 "A: componentWillUpdate",
+                "A: componentDidUpdate",
                 "A: componentWillUpdate",
-                "A: componentWillMount"
+                "A: componentDidUpdate",
+                "A: componentWillMount",
+                "A: componentDidMount",
             ])
         ).toBeTruthy();
 
@@ -194,7 +248,9 @@ describe("test react liked lifecycle hooks", function() {
         expect(
             logger.equals([
                 "A: componentWillUpdate",
+                "A: componentDidUpdate",
                 "A: componentWillUpdate",
+                "A: componentDidUpdate",
                 "A: componentWillUnmount"
             ])
         ).toBeTruthy();
@@ -209,8 +265,11 @@ describe("test react liked lifecycle hooks", function() {
         expect(
             logger.equals([
                 "A: componentWillUpdate",
+                "A: componentDidUpdate",
                 "A: componentWillUpdate",
-                "A: componentWillMount"
+                "A: componentDidUpdate",
+                "A: componentWillMount",
+                "A: componentDidMount",
             ])
         ).toBeTruthy();
 
@@ -223,7 +282,9 @@ describe("test react liked lifecycle hooks", function() {
         expect(
             logger.equals([
                 "A: componentWillUpdate",
+                "A: componentDidUpdate",
                 "A: componentWillUpdate",
+                "A: componentDidUpdate",
                 "A: componentWillUnmount"
             ])
         ).toBeTruthy();

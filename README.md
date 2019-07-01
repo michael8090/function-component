@@ -11,5 +11,5 @@ TODO:
 
 Won't DO:
 
-- [ ] 去掉componentWillUpdate, 添加componentDidMount, componentDidUpdate
+- [ ] 去掉componentWillUpdate
 
