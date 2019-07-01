@@ -297,7 +297,7 @@ export function toFunctionComponent<TData extends any[], TView = {}>
             }
         }
 
-        if (isMount) {
+        if (isMount === true) {
             if (currentInstance.componentDidMount !== undefined) {
                 currentInstance.componentDidMount.apply(currentInstance, currentInstance.cachedArgs);
             }
