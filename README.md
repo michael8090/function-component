@@ -2,9 +2,9 @@
 Function as component
 
 Performance
-react demo：https://codesandbox.io/s/zealous-framework-m6gwg （toggle the checkbox to stop threejs updating，and type in `100000` to see how the perf goes with 100000 components）
+react demo：https://codesandbox.io/s/zealous-framework-m6gwg  (toggle the checkbox to stop threejs updating，and type in `100000` to see how the perf goes with 100000 components)
 
-FunctionComponent：https://github.com/michael8090/function-component（yarn start，type `doBenchmark()` in the console，or tick() to use chrome developer tool to analyse the performance)
+FunctionComponent：https://github.com/michael8090/function-component  (yarn start，type `doBenchmark()` in the console，or tick() to use chrome developer tool to analyse the performance)
 
 
 |                   | updating components | duration | GC                          |
@@ -23,5 +23,5 @@ TODO:
 
 Won't DO:
 
-- [ ] remove `componentWillUpdate`
+- [ ] remove `componentWillUpdate` and `componentWillMount`
 
